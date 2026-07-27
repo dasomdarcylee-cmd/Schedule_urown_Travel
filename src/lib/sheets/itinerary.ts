@@ -1,5 +1,5 @@
 import { getGoogleAccessToken } from "./googleAuth";
-import { classifyBackgroundColor } from "./colors";
+import { classifyTask } from "./colors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
 import { CATEGORY_COLOR } from "../itinerary/types";
@@ -41,9 +41,9 @@ function cellText(cell: SheetsCell | undefined): string {
   return cell?.formattedValue?.trim() ?? "";
 }
 
-function cellCategoryColor(cell: SheetsCell | undefined) {
+function cellCategory(cell: SheetsCell | undefined) {
   const color = cell?.effectiveFormat?.backgroundColor ?? cell?.userEnteredFormat?.backgroundColor;
-  return classifyBackgroundColor(color ?? null);
+  return classifyTask(cellText(cell), color ?? null);
 }
 
 function parseCost(text: string): number | null {
@@ -148,7 +148,7 @@ export function parseSheetsResponse(json: SheetsResponse): Itinerary {
         endSlot,
         text,
         cost,
-        category: cellCategoryColor(grid[r][leftCol]),
+        category: cellCategory(grid[r][leftCol]),
       });
     }
   }
