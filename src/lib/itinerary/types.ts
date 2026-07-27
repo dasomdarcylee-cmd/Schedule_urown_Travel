@@ -15,16 +15,6 @@ export const CATEGORY_COLOR: Record<TaskCategory, string> = {
   other: "#cbbfb2",
 };
 
-// 구글시트 셀에 실제로 써넣는 배경색 — 시트는 검정/짙은 글씨를 그대로 쓰므로 훨씬
-// 연하게 (Google Sheets 기본 팔레트의 "연한 색상 3" 계열). 색조(hue)는 위 CATEGORY_COLOR와
-// 동일하게 유지해서 colors.ts의 색조 기반 분류기가 계속 같은 카테고리로 인식한다.
-export const CATEGORY_SHEET_COLOR: Record<TaskCategory, string> = {
-  transport: "#f4cccc",
-  tour: "#c9daf8",
-  food: "#d9ead3",
-  other: "#f3f3f3",
-};
-
 export interface ItineraryTask {
   id: string;
   dayIndex: number; // 1-based, "N일차"
@@ -47,5 +37,6 @@ export interface Itinerary {
   days: DayColumn[];
   timeSlots: string[]; // "4:00 AM" ~ "9:00 PM", 30분 단위
   tasks: ItineraryTask[];
+  categoryColors: Record<TaskCategory, string>;
   revision: string;
 }

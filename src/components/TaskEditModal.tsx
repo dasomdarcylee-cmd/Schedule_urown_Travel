@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
-import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/itinerary/types";
+import { CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { formatDurationSlots } from "@/lib/itinerary/timeSlots";
 
 const MAX_DURATION_SLOTS = 16; // 최대 8시간
@@ -13,11 +13,13 @@ const LABEL_CLASS = "block text-xs font-bold text-[#9c8a7c]";
 export function TaskEditModal({
   task,
   timeSlots,
+  categoryColors,
   onClose,
   onSave,
 }: {
   task: ItineraryTask;
   timeSlots: string[];
+  categoryColors: Record<TaskCategory, string>;
   onClose: () => void;
   onSave: (edit: {
     originalEndSlot: number;
@@ -120,14 +122,14 @@ export function TaskEditModal({
                 onClick={() => setCategory(key)}
                 className="flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold"
                 style={{
-                  borderColor: category === key ? CATEGORY_COLOR[key] : "#ffe1c2",
-                  color: category === key ? CATEGORY_COLOR[key] : "#9c8a7c",
-                  backgroundColor: category === key ? `${CATEGORY_COLOR[key]}1a` : "transparent",
+                  borderColor: category === key ? categoryColors[key] : "#ffe1c2",
+                  color: category === key ? categoryColors[key] : "#9c8a7c",
+                  backgroundColor: category === key ? `${categoryColors[key]}1a` : "transparent",
                 }}
               >
                 <span
                   className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: CATEGORY_COLOR[key] }}
+                  style={{ backgroundColor: categoryColors[key] }}
                 />
                 {CATEGORY_LABEL[key]}
               </button>

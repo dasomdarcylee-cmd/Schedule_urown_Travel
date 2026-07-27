@@ -1,8 +1,8 @@
 import { getGoogleAccessToken } from "./googleAuth";
 import { classifyTask } from "./colors";
+import { getCategoryColors, lightenHexForSheet } from "./categoryColors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
-import { CATEGORY_SHEET_COLOR } from "../itinerary/types";
 
 interface SheetsCellFormat {
   backgroundColor?: { red?: number; green?: number; blue?: number };
@@ -68,7 +68,7 @@ function findMergeAt(merges: SheetsMerge[], row: number, col: number): SheetsMer
   );
 }
 
-export function parseSheetsResponse(json: SheetsResponse): Itinerary {
+export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record<TaskCategory, string>): Itinerary {
   const sheet = json.sheets[0];
   if (!sheet) throw new Error("시트를 찾을 수 없음");
 
@@ -160,6 +160,7 @@ export function parseSheetsResponse(json: SheetsResponse): Itinerary {
     days,
     timeSlots,
     tasks,
+    categoryColors,
     revision,
   };
 }
@@ -172,16 +173,17 @@ function splitDateWeekday(raw: string): [string, string] {
 
 export async function fetchItinerary(env: CloudflareEnv): Promise<Itinerary> {
   let token = await getGoogleAccessToken(env);
-  let res = await fetchRaw(env, token);
+  const [res, categoryColors] = await Promise.all([fetchRaw(env, token), getCategoryColors(env)]);
+  let gridRes = res;
 
-  if (res.status === 401) {
+  if (gridRes.status === 401) {
     token = await getGoogleAccessToken(env, true);
-    res = await fetchRaw(env, token);
+    gridRes = await fetchRaw(env, token);
   }
-  if (!res.ok) throw new Error(`구글시트 조회 HTTP ${res.status}`);
+  if (!gridRes.ok) throw new Error(`구글시트 조회 HTTP ${gridRes.status}`);
 
-  const json = (await res.json()) as SheetsResponse;
-  return parseSheetsResponse(json);
+  const json = (await gridRes.json()) as SheetsResponse;
+  return parseSheetsResponse(json, categoryColors);
 }
 
 export interface TaskEdit {
@@ -217,7 +219,7 @@ function dayColumns(dayIndex: number) {
 
 export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<void> {
   let token = await getGoogleAccessToken(env);
-  const sheetId = await getSheetId(env, token);
+  const [sheetId, categoryColors] = await Promise.all([getSheetId(env, token), getCategoryColors(env)]);
   const { leftCol, rightCol } = dayColumns(edit.dayIndex);
   const timeRowOffset = 2; // 헤더 2행 다음부터 시간행 시작
 
@@ -259,7 +261,7 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
   });
 
   // 2) 새 범위에 텍스트/비용/색상 기록
-  const color = hexToRgb01(CATEGORY_SHEET_COLOR[edit.category]);
+  const color = hexToRgb01(lightenHexForSheet(categoryColors[edit.category]));
   requests.push({
     updateCells: {
       range: {
@@ -371,5 +373,81 @@ export async function updateCountryLabel(env: CloudflareEnv, oldRaw: string, new
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`구글시트 업데이트 HTTP ${res.status}: ${body}`);
+  }
+}
+
+// 특정 카테고리로 분류된 모든 일정 셀의 배경색을 새 색으로 다시 칠한다. 카테고리 색을
+// 바꾸면 앱 화면뿐 아니라 시트에 이미 칠해진 셀들도 같은 의미(카테고리)를 유지하도록.
+export async function recolorCategory(
+  env: CloudflareEnv,
+  category: TaskCategory,
+  newColor: string
+): Promise<void> {
+  let token = await getGoogleAccessToken(env);
+  const sheetId = await getSheetId(env, token);
+  let gridRes = await fetchRaw(env, token);
+  if (gridRes.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    gridRes = await fetchRaw(env, token);
+  }
+  if (!gridRes.ok) throw new Error(`구글시트 조회 HTTP ${gridRes.status}`);
+
+  const json = (await gridRes.json()) as SheetsResponse;
+  const sheet = json.sheets[0];
+  const merges = sheet.merges ?? [];
+  const grid: SheetsCell[][] = (sheet.data[0]?.rowData ?? []).map((r) => r.values ?? []);
+  const numCols = grid.reduce((max, row) => Math.max(max, row.length), 0);
+
+  let totalRowIndex = grid.length;
+  for (let r = 2; r < grid.length; r++) {
+    if (cellText(grid[r][0]) === "Total") {
+      totalRowIndex = r;
+      break;
+    }
+  }
+
+  const dayPairs: { leftCol: number }[] = [];
+  for (let c = 1; c + 1 < numCols; c += 2) dayPairs.push({ leftCol: c });
+
+  const color = hexToRgb01(lightenHexForSheet(newColor));
+  const requests: unknown[] = [];
+
+  for (const { leftCol } of dayPairs) {
+    for (let r = 2; r < totalRowIndex; r++) {
+      const merge = findMergeAt(merges, r, leftCol);
+      if (merge && merge.startRowIndex !== r) continue;
+      const cell = grid[r][leftCol];
+      if (!cellText(cell)) continue;
+      if (cellCategory(cell) !== category) continue;
+
+      requests.push({
+        updateCells: {
+          range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: leftCol, endColumnIndex: leftCol + 1 },
+          fields: "userEnteredFormat.backgroundColor",
+          rows: [{ values: [{ userEnteredFormat: { backgroundColor: color } }] }],
+        },
+      });
+    }
+  }
+
+  if (requests.length === 0) return;
+
+  const url2 = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
+  let res2 = await fetch(url2, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ requests }),
+  });
+  if (res2.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    res2 = await fetch(url2, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ requests }),
+    });
+  }
+  if (!res2.ok) {
+    const body = await res2.text();
+    throw new Error(`구글시트 업데이트 HTTP ${res2.status}: ${body}`);
   }
 }

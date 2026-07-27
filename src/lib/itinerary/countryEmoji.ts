@@ -17,6 +17,7 @@ export const CURATED_COUNTRY_EMOJIS = [
   "🌸", // 벚꽃
   "🍁", // 단풍
   "🏔️", // 산맥
+  "⛪", // 파란 지붕 하얀 교회 (산토리니 등 그리스 섬)
 ];
 
 const DEFAULT_EMOJI = "📍";

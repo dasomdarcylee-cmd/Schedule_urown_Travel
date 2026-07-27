@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Itinerary, ItineraryTask } from "@/lib/itinerary/types";
-import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/itinerary/types";
+import type { Itinerary, ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
+import { CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { findTodayDayIndex } from "@/lib/itinerary/timezone";
 import { countryDisplayLabel } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
@@ -134,6 +134,24 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     }));
   }
 
+  async function handleCategoryColorChange(category: TaskCategory, color: string) {
+    // 낙관적 업데이트: 즉시 앱 전체(범례+칩)에 반영, 시트 재색칠은 백그라운드에서 진행
+    setItinerary((prev) => ({
+      ...prev,
+      categoryColors: { ...prev.categoryColors, [category]: color },
+    }));
+    try {
+      const res = await fetch("/api/itinerary/categories", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ category, color }),
+      });
+      if (!res.ok) throw new Error("실패");
+    } catch {
+      // 실패해도 다음 폴링에서 서버 값으로 자연스럽게 보정됨
+    }
+  }
+
   const activeDay = itinerary.days[activeIndex];
 
   return (
@@ -143,13 +161,20 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
           {Object.entries(CATEGORY_LABEL)
             .filter(([key]) => key !== "other")
             .map(([key, label]) => (
-              <span key={key} className="flex items-center gap-1">
+              <label key={key} className="flex items-center gap-1 cursor-pointer">
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: CATEGORY_COLOR[key as keyof typeof CATEGORY_COLOR] }}
-                />
+                  className="relative inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: itinerary.categoryColors[key as TaskCategory] }}
+                >
+                  <input
+                    type="color"
+                    value={itinerary.categoryColors[key as TaskCategory]}
+                    onChange={(e) => handleCategoryColorChange(key as TaskCategory, e.target.value)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                </span>
                 {label}
-              </span>
+              </label>
             ))}
         </div>
         <div className="flex gap-1.5">
@@ -183,13 +208,14 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
               </span>
             ))}
           </div>
-          <div className="text-right text-sm font-semibold text-[#9c8a7c]">
-            <div>
+          <div className="text-right text-sm text-[#9c8a7c]">
+            <div className="font-bold text-black">
               {activeDay.date} ({activeDay.weekday})
             </div>
-            <div className="mt-0.5 inline-block rounded-full bg-[#ff9a62] px-2 py-0.5 text-[11px] text-white">
+            <div className="mt-0.5 inline-block rounded-full bg-[#ff9a62] px-2 py-0.5 text-[11px] font-semibold text-white">
               {activeDay.dayIndex}일차
             </div>
+            <div className="mt-0.5 text-[10px] text-[#c7b8ab]">금액 단위: 만 원</div>
           </div>
         </header>
       )}
@@ -206,6 +232,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
             timeSlots={itinerary.timeSlots}
             tasks={tasksByDay.get(day.dayIndex) ?? []}
             now={now}
+            categoryColors={itinerary.categoryColors}
             onTaskClick={setEditingTask}
           />
         ))}
@@ -215,6 +242,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
         <TaskEditModal
           task={editingTask}
           timeSlots={itinerary.timeSlots}
+          categoryColors={itinerary.categoryColors}
           onClose={() => setEditingTask(null)}
           onSave={handleSaveEdit}
         />

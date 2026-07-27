@@ -1,5 +1,6 @@
 import { generateTimeSlots } from "./timeSlots";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "./types";
+import { CATEGORY_COLOR } from "./types";
 
 // 실제 "Travel Schedule" 구글시트(Dubai and Greece 탭)를 읽어 확인한 구조를 바탕으로 만든
 // 개발용 목업 데이터. 요일/날짜/국가/이동일 구성은 실제 시트와 일치하지만, 시간대별 세부
@@ -82,5 +83,6 @@ export const tripFixture: Itinerary = {
   days: DAYS,
   timeSlots: TIME_SLOTS,
   tasks: TASKS,
+  categoryColors: CATEGORY_COLOR,
   revision: "fixture-v1",
 };

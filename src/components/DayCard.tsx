@@ -1,4 +1,4 @@
-import type { DayColumn, ItineraryTask } from "@/lib/itinerary/types";
+import type { DayColumn, ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
 import { isDayToday, nowSlotPosition } from "@/lib/itinerary/timezone";
 import { TaskChip, ROW_HEIGHT } from "./TaskChip";
 import { CostChip } from "./CostChip";
@@ -8,12 +8,14 @@ export function DayCard({
   timeSlots,
   tasks,
   now,
+  categoryColors,
   onTaskClick,
 }: {
   day: DayColumn;
   timeSlots: string[];
   tasks: ItineraryTask[];
   now: Date;
+  categoryColors: Record<TaskCategory, string>;
   onTaskClick?: (task: ItineraryTask) => void;
 }) {
   const today = isDayToday(day, now);
@@ -46,7 +48,7 @@ export function DayCard({
           ))}
 
           {tasks.map((task) => (
-            <TaskChip key={task.id} task={task} onClick={onTaskClick} />
+            <TaskChip key={task.id} task={task} categoryColors={categoryColors} onClick={onTaskClick} />
           ))}
 
           {nowPos != null && (
@@ -71,7 +73,7 @@ export function DayCard({
             />
           ))}
           {tasks.map((task) => (
-            <CostChip key={task.id} task={task} onClick={onTaskClick} />
+            <CostChip key={task.id} task={task} categoryColors={categoryColors} onClick={onTaskClick} />
           ))}
         </div>
       </div>

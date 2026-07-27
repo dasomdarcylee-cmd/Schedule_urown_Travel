@@ -1,18 +1,19 @@
-import { CATEGORY_COLOR } from "@/lib/itinerary/types";
-import type { ItineraryTask } from "@/lib/itinerary/types";
+import type { ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
 
 const ROW_HEIGHT = 28;
 
 export function TaskChip({
   task,
+  categoryColors,
   onClick,
 }: {
   task: ItineraryTask;
+  categoryColors: Record<TaskCategory, string>;
   onClick?: (task: ItineraryTask) => void;
 }) {
   const top = task.startSlot * ROW_HEIGHT;
   const height = (task.endSlot - task.startSlot + 1) * ROW_HEIGHT - 2;
-  const color = CATEGORY_COLOR[task.category];
+  const color = categoryColors[task.category];
 
   return (
     <button
