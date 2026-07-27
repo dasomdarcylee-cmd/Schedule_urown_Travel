@@ -146,6 +146,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       {editingTask && (
         <TaskEditModal
           task={editingTask}
+          timeSlots={itinerary.timeSlots}
           onClose={() => setEditingTask(null)}
           onSave={handleSaveEdit}
         />

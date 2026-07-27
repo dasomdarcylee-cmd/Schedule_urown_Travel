@@ -24,6 +24,16 @@ export function generateTimeSlots(startHour = 4, endHour = 21, stepMinutes = 30)
   return slots;
 }
 
+// 30분 단위 슬롯 개수를 "1시간 30분" 같은 표기로 변환
+export function formatDurationSlots(slots: number, stepMinutes = 30): string {
+  const totalMinutes = slots * stepMinutes;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}분`;
+  if (m === 0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
 // 현재 시각(해당 타임존)을 슬롯 그리드 상의 위치(0=첫 슬롯 시작, 슬롯 인덱스 단위 소수)로 변환.
 // 그리드 범위 밖이면 null.
 export function timeToSlotPosition(
