@@ -1,11 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { CURATED_COUNTRY_EMOJIS, splitCountryLabel, joinCountryLabel } from "@/lib/itinerary/countryEmoji";
+import { COUNTRY_ICON_OPTIONS, splitCountryLabel, joinCountryLabel } from "@/lib/itinerary/countryEmoji";
+import type { CountryIconOption } from "@/lib/itinerary/countryEmoji";
 
 const FIELD_CLASS =
   "mt-1 w-full rounded-xl border border-[#ffe1c2] bg-[#fff9f2] px-3 py-1.5 text-sm text-[#3a2e27] focus:border-[#ff9a62] focus:outline-none";
 const LABEL_CLASS = "block text-xs font-bold text-[#9c8a7c]";
+
+// 산토리니 커스텀 이미지 옵션은 이모지가 없어서, 파란 돔+하얀 벽 느낌의 원기둥 모양 스와치로
+// 대신 표시한다 (실제 헤더에는 이 스와치가 아니라 진짜 이미지가 나옴 — 이건 목록에서만 쓰는 아이콘).
+function OptionGlyph({ option }: { option: CountryIconOption }) {
+  if (option.kind === "image") {
+    return (
+      <span
+        aria-hidden="true"
+        className="inline-block h-[18px] w-[18px] shrink-0 border border-[#d8dbe0]"
+        style={{
+          borderRadius: "9px 9px 3px 3px",
+          background: "linear-gradient(to bottom, #2f6fdb 0%, #2f6fdb 45%, #ffffff 45%, #ffffff 100%)",
+        }}
+      />
+    );
+  }
+  return <span className="text-base leading-none">{option.value}</span>;
+}
 
 export function CountryEditModal({
   rawLabel,
@@ -18,14 +37,17 @@ export function CountryEditModal({
 }) {
   const initial = splitCountryLabel(rawLabel);
   const [name, setName] = useState(initial.name);
-  const [emoji, setEmoji] = useState<string>(initial.emoji ?? "");
+  const [iconKey, setIconKey] = useState<string>(initial.iconKey ?? "");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const selectedOption = COUNTRY_ICON_OPTIONS.find((o) => o.key === iconKey);
 
   async function handleSave() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await onSave(joinCountryLabel(emoji || null, name.trim()));
+      await onSave(joinCountryLabel(iconKey || null, name.trim()));
       onClose();
     } finally {
       setSaving(false);
@@ -44,17 +66,60 @@ export function CountryEditModal({
           <input className={FIELD_CLASS} value={name} onChange={(e) => setName(e.target.value)} />
         </label>
 
-        <label className={`mb-4 ${LABEL_CLASS}`}>
-          대표 아이콘
-          <select className={FIELD_CLASS} value={emoji} onChange={(e) => setEmoji(e.target.value)}>
-            <option value="">📍 기본(선택 안 함)</option>
-            {CURATED_COUNTRY_EMOJIS.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="relative mb-4">
+          <span className={LABEL_CLASS}>대표 아이콘</span>
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            className={`${FIELD_CLASS} flex items-center justify-between text-left`}
+          >
+            <span className="flex items-center gap-2">
+              {selectedOption ? <OptionGlyph option={selectedOption} /> : <span>📍</span>}
+              {selectedOption
+                ? selectedOption.label.replace(/^\S+\s/, "")
+                : "기본(선택 안 함)"}
+            </span>
+            <span className="text-[#c7b8ab]">▾</span>
+          </button>
+
+          {pickerOpen && (
+            <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[#ffe1c2] bg-white shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setIconKey("");
+                  setPickerOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#fff6ec]"
+              >
+                <span>📍</span> 기본(선택 안 함)
+              </button>
+              {COUNTRY_ICON_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => {
+                    setIconKey(opt.key);
+                    setPickerOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#fff6ec]"
+                >
+                  <OptionGlyph option={opt} />
+                  {opt.label.replace(/^\S+\s/, "")}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-4 flex h-14 items-center justify-center rounded-xl border border-dashed border-[#ffe1c2] bg-[#fff9f2]">
+          {selectedOption?.kind === "image" ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selectedOption.value} alt="" className="h-10 w-10" />
+          ) : (
+            <span className="text-2xl">{selectedOption?.value ?? "📍"}</span>
+          )}
+        </div>
 
         <div className="flex justify-end gap-2">
           <button

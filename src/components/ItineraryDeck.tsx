@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Itinerary, ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
 import { CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { findTodayDayIndex } from "@/lib/itinerary/timezone";
-import { countryDisplayLabel } from "@/lib/itinerary/countryEmoji";
+import { countryIcon } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
 import { CountryEditModal } from "./CountryEditModal";
@@ -199,14 +199,27 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       {activeDay && (
         <header className="flex items-baseline justify-between px-3 pb-2">
           <div className="flex items-baseline gap-1 font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
-            {activeDay.countries.map((c, i) => (
-              <span key={c} className="flex items-baseline gap-1">
-                {i > 0 && <span className="text-[#c7b8ab]">→</span>}
-                <button type="button" onClick={() => setEditingCountry(c)} className="active:opacity-60">
-                  {countryDisplayLabel(c)}
-                </button>
-              </span>
-            ))}
+            {activeDay.countries.map((c, i) => {
+              const icon = countryIcon(c);
+              return (
+                <span key={c} className="flex items-baseline gap-1">
+                  {i > 0 && <span className="text-[#c7b8ab]">→</span>}
+                  <button
+                    type="button"
+                    onClick={() => setEditingCountry(c)}
+                    className="flex items-center gap-1 active:opacity-60"
+                  >
+                    {icon.kind === "image" ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={icon.value} alt="" className="h-6 w-6" />
+                    ) : (
+                      <span>{icon.value}</span>
+                    )}
+                    {icon.name}
+                  </button>
+                </span>
+              );
+            })}
           </div>
           <div className="text-right text-sm text-[#9c8a7c]">
             <div className="font-bold text-black">
