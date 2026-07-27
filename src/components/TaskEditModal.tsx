@@ -6,6 +6,9 @@ import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { formatDurationSlots } from "@/lib/itinerary/timeSlots";
 
 const MAX_DURATION_SLOTS = 16; // 최대 8시간
+const FIELD_CLASS =
+  "mt-1 w-full rounded-xl border border-[#ffe1c2] bg-[#fff9f2] px-3 py-1.5 text-sm text-[#3a2e27] focus:border-[#ff9a62] focus:outline-none";
+const LABEL_CLASS = "block text-xs font-bold text-[#9c8a7c]";
 
 export function TaskEditModal({
   task,
@@ -53,24 +56,22 @@ export function TaskEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-lg bg-neutral-900 p-4 shadow-xl">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-300">일정 수정</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3a2e27]/40 p-4">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+        <h2 className="mb-3 font-[family-name:var(--font-heading)] text-lg font-extrabold text-[#3a2e27]">
+          ✏️ 일정 수정
+        </h2>
 
-        <label className="mb-2 block text-xs text-neutral-400">
+        <label className={`mb-2 ${LABEL_CLASS}`}>
           내용
-          <input
-            className="mt-1 w-full rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
+          <input className={FIELD_CLASS} value={text} onChange={(e) => setText(e.target.value)} />
         </label>
 
         <div className="mb-2 flex gap-2">
-          <label className="block flex-1 text-xs text-neutral-400">
+          <label className={`flex-1 ${LABEL_CLASS}`}>
             시작 시간
             <select
-              className="mt-1 w-full rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
+              className={FIELD_CLASS}
               value={startSlot}
               onChange={(e) => setStartSlot(Number(e.target.value))}
             >
@@ -82,10 +83,10 @@ export function TaskEditModal({
             </select>
           </label>
 
-          <label className="block flex-1 text-xs text-neutral-400">
+          <label className={`flex-1 ${LABEL_CLASS}`}>
             소요시간
             <select
-              className="mt-1 w-full rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
+              className={FIELD_CLASS}
               value={durationSlots}
               onChange={(e) => setDurationSlots(Number(e.target.value))}
             >
@@ -98,10 +99,10 @@ export function TaskEditModal({
           </label>
         </div>
 
-        <label className="mb-2 block text-xs text-neutral-400">
+        <label className={`mb-2 ${LABEL_CLASS}`}>
           비용
           <input
-            className="mt-1 w-full rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
+            className={FIELD_CLASS}
             value={cost}
             inputMode="decimal"
             placeholder="없음"
@@ -110,17 +111,18 @@ export function TaskEditModal({
         </label>
 
         <div className="mb-4">
-          <span className="block text-xs text-neutral-400">카테고리</span>
+          <span className={LABEL_CLASS}>카테고리</span>
           <div className="mt-1 flex gap-2">
             {(Object.keys(CATEGORY_LABEL) as TaskCategory[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setCategory(key)}
-                className="flex items-center gap-1 rounded border px-2 py-1 text-xs"
+                className="flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold"
                 style={{
-                  borderColor: category === key ? CATEGORY_COLOR[key] : "#404040",
-                  color: category === key ? CATEGORY_COLOR[key] : "#a3a3a3",
+                  borderColor: category === key ? CATEGORY_COLOR[key] : "#ffe1c2",
+                  color: category === key ? CATEGORY_COLOR[key] : "#9c8a7c",
+                  backgroundColor: category === key ? `${CATEGORY_COLOR[key]}1a` : "transparent",
                 }}
               >
                 <span
@@ -137,7 +139,7 @@ export function TaskEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded px-3 py-1.5 text-sm text-neutral-400"
+            className="rounded-full px-3 py-1.5 text-sm font-bold text-[#9c8a7c]"
           >
             취소
           </button>
@@ -145,7 +147,7 @@ export function TaskEditModal({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-full bg-[#ff9a62] px-4 py-1.5 text-sm font-bold text-white shadow-[0_4px_10px_rgba(255,154,98,0.35)] disabled:opacity-50"
           >
             {saving ? "저장 중..." : "저장"}
           </button>

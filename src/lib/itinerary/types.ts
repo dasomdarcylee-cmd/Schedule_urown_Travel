@@ -7,12 +7,13 @@ export const CATEGORY_LABEL: Record<TaskCategory, string> = {
   other: "기타",
 };
 
-// Google Sheets 배경색과 매칭할 카테고리별 대표 색상 (실제 시트 hex는 Sheets API 연동 후 보정)
+// 여행 테마 파스텔 팔레트. 채도/명도만 낮췄을 뿐 색조(hue)는 원래 빨강/파랑/초록과
+// 동일하게 유지했으므로 colors.ts의 색조 기반 분류기는 그대로 동작한다.
 export const CATEGORY_COLOR: Record<TaskCategory, string> = {
-  transport: "#ef4444",
-  tour: "#3b82f6",
-  food: "#22c55e",
-  other: "#6b7280",
+  transport: "#ff8a80",
+  tour: "#5bc0de",
+  food: "#7bc986",
+  other: "#cbbfb2",
 };
 
 export interface ItineraryTask {

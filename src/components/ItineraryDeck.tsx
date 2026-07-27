@@ -97,30 +97,32 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-neutral-800 px-3 py-2">
-        <div className="flex gap-3 text-xs text-neutral-400">
-          {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
-            <span key={key} className="flex items-center gap-1">
-              <span
-                className="inline-block h-2 w-2 rounded-full"
-                style={{ backgroundColor: CATEGORY_COLOR[key as keyof typeof CATEGORY_COLOR] }}
-              />
-              {label}
-            </span>
-          ))}
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        <div className="flex gap-2.5 text-xs font-semibold text-[#9c8a7c]">
+          {Object.entries(CATEGORY_LABEL)
+            .filter(([key]) => key !== "other")
+            .map(([key, label]) => (
+              <span key={key} className="flex items-center gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: CATEGORY_COLOR[key as keyof typeof CATEGORY_COLOR] }}
+                />
+                {label}
+              </span>
+            ))}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <button
             type="button"
             onClick={() => scrollByCard(-1)}
-            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+            className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#ff9a62] shadow-[0_4px_10px_rgba(255,154,98,0.25)]"
           >
             ← 이전
           </button>
           <button
             type="button"
             onClick={() => scrollByCard(1)}
-            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+            className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#ff9a62] shadow-[0_4px_10px_rgba(255,154,98,0.25)]"
           >
             다음 →
           </button>

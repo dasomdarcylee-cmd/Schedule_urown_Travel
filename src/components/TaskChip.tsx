@@ -18,11 +18,11 @@ export function TaskChip({
     <button
       type="button"
       onClick={() => onClick?.(task)}
-      className="absolute left-1 right-1 rounded-md px-2 py-1 text-left text-xs leading-tight text-white shadow-sm overflow-hidden"
+      className="absolute left-1 right-1 rounded-xl px-2 py-1 text-left text-xs leading-tight text-white shadow-[0_2px_4px_rgba(0,0,0,0.12)] overflow-hidden"
       style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: color }}
     >
-      <div className="font-medium truncate">{task.text}</div>
-      {task.cost != null && <div className="opacity-80">${task.cost}</div>}
+      <div className="font-bold truncate">{task.text}</div>
+      {task.cost != null && <div className="font-semibold opacity-90">${task.cost}</div>}
     </button>
   );
 }
