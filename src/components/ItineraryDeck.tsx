@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Itinerary, ItineraryTask } from "@/lib/itinerary/types";
 import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { findTodayDayIndex } from "@/lib/itinerary/timezone";
+import { countryLabel } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
 
@@ -14,6 +15,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
   const [itinerary, setItinerary] = useState(initialItinerary);
   const [now, setNow] = useState(() => new Date());
   const [editingTask, setEditingTask] = useState<ItineraryTask | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const revisionRef = useRef(initialItinerary.revision);
 
   useEffect(() => {
@@ -46,14 +48,29 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     };
   }, []);
 
+  // 초기 진입 시 "오늘" 카드로 스크롤 + 상단 제목의 활성 인덱스도 맞춰둔다
   useEffect(() => {
-    const todayIndex = findTodayDayIndex(itinerary.days, now) ?? itinerary.days[0]?.dayIndex;
+    const todayDayIndex = findTodayDayIndex(itinerary.days, now) ?? itinerary.days[0]?.dayIndex;
+    const idx = itinerary.days.findIndex((d) => d.dayIndex === todayDayIndex);
     const el = deckRef.current;
-    if (!el || todayIndex == null) return;
-    const target = el.children[todayIndex - 1] as HTMLElement | undefined;
-    target?.scrollIntoView({ behavior: "instant" as ScrollBehavior, inline: "start" });
+    if (!el) return;
+    if (idx > 0) {
+      const target = el.children[idx] as HTMLElement | undefined;
+      target?.scrollIntoView({ behavior: "instant" as ScrollBehavior, inline: "start" });
+    }
+    setActiveIndex(Math.max(idx, 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 가로 스크롤 위치만 보고 "지금 보고 있는 날"을 계산 — 세로 스크롤은 각 카드 내부에서만
+  // 일어나므로 여기엔 영향을 주지 않는다.
+  function handleDeckScroll() {
+    const el = deckRef.current;
+    if (!el) return;
+    const width = el.clientWidth || 1;
+    const idx = Math.round(el.scrollLeft / width);
+    setActiveIndex(Math.min(Math.max(idx, 0), itinerary.days.length - 1));
+  }
 
   const tasksByDay = new Map<number, ItineraryTask[]>();
   for (const task of itinerary.tasks) {
@@ -95,6 +112,8 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     }));
   }
 
+  const activeDay = itinerary.days[activeIndex];
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-3 px-3 py-2">
@@ -129,9 +148,27 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
         </div>
       </div>
 
+      {/* 스와이프해도 이 제목 영역은 고정, 텍스트만 현재 보고 있는 날짜의 국가로 바뀐다 */}
+      {activeDay && (
+        <header className="flex items-baseline justify-between px-3 pb-2">
+          <div className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
+            {activeDay.countries.map((c) => countryLabel(c)).join(" → ")}
+          </div>
+          <div className="text-right text-sm font-semibold text-[#9c8a7c]">
+            <div>
+              {activeDay.date} ({activeDay.weekday})
+            </div>
+            <div className="mt-0.5 inline-block rounded-full bg-[#ff9a62] px-2 py-0.5 text-[11px] text-white">
+              {activeDay.dayIndex}일차
+            </div>
+          </div>
+        </header>
+      )}
+
       <div
         ref={deckRef}
-        className="flex flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-auto"
+        onScroll={handleDeckScroll}
+        className="flex flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
       >
         {itinerary.days.map((day) => (
           <DayCard

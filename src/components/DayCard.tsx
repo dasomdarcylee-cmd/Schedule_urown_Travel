@@ -1,6 +1,5 @@
 import type { DayColumn, ItineraryTask } from "@/lib/itinerary/types";
 import { isDayToday, nowSlotPosition } from "@/lib/itinerary/timezone";
-import { countryLabel } from "@/lib/itinerary/countryEmoji";
 import { TaskChip, ROW_HEIGHT } from "./TaskChip";
 
 export function DayCard({
@@ -21,27 +20,13 @@ export function DayCard({
   const gridHeight = timeSlots.length * ROW_HEIGHT;
 
   return (
-    <section className="w-full shrink-0 snap-start px-3 py-3">
-      <header className="mb-2 flex items-baseline justify-between">
-        <div className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
-          {day.countries.map((c) => countryLabel(c)).join(" → ")}
-        </div>
-        <div className="text-right text-sm font-semibold text-[#9c8a7c]">
-          <div>
-            {day.date} ({day.weekday})
-          </div>
-          <div className="mt-0.5 inline-block rounded-full bg-[#ff9a62] px-2 py-0.5 text-[11px] text-white">
-            {day.dayIndex}일차
-          </div>
-        </div>
-      </header>
-
+    <section className="h-full w-full shrink-0 snap-start overflow-y-auto px-3 pb-3">
       <div className="flex overflow-hidden rounded-2xl bg-white shadow-[0_6px_16px_rgba(255,154,98,0.18)]">
-        <div className="w-14 shrink-0 text-right">
+        <div className="w-16 shrink-0 text-right">
           {timeSlots.map((label, i) => (
             <div
               key={label}
-              className="pr-2 text-[10px] font-semibold text-[#c7b8ab]"
+              className="pr-2 text-xs font-bold text-[#8a7566]"
               style={{ height: ROW_HEIGHT }}
             >
               {i % 2 === 0 ? label : ""}
