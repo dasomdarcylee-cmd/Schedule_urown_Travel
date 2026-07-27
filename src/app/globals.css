@@ -17,4 +17,7 @@
 body {
   background: linear-gradient(180deg, var(--background-wash) 0%, var(--background) 45%);
   color: var(--foreground);
+  /* 홈 화면 설치(standalone) 시 노치/상태바 영역과 겹치지 않도록 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }

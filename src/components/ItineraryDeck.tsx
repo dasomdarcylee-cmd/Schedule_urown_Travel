@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Itinerary, ItineraryTask } from "@/lib/itinerary/types";
 import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { findTodayDayIndex } from "@/lib/itinerary/timezone";
-import { countryLabel } from "@/lib/itinerary/countryEmoji";
+import { countryDisplayLabel } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
+import { CountryEditModal } from "./CountryEditModal";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -15,6 +16,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
   const [itinerary, setItinerary] = useState(initialItinerary);
   const [now, setNow] = useState(() => new Date());
   const [editingTask, setEditingTask] = useState<ItineraryTask | null>(null);
+  const [editingCountry, setEditingCountry] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const revisionRef = useRef(initialItinerary.revision);
 
@@ -112,6 +114,26 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     }));
   }
 
+  async function handleSaveCountry(newRaw: string) {
+    if (!editingCountry) return;
+    const oldRaw = editingCountry;
+    const res = await fetch("/api/itinerary/countries", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ oldRaw, newRaw }),
+    });
+    if (!res.ok) throw new Error("저장 실패");
+
+    // 같은 국가가 여러 날에 걸쳐 등장하면 전부 함께 바뀐다 (서버와 동일한 규칙)
+    setItinerary((prev) => ({
+      ...prev,
+      days: prev.days.map((d) => ({
+        ...d,
+        countries: d.countries.map((c) => (c === oldRaw ? newRaw : c)),
+      })),
+    }));
+  }
+
   const activeDay = itinerary.days[activeIndex];
 
   return (
@@ -151,8 +173,15 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       {/* 스와이프해도 이 제목 영역은 고정, 텍스트만 현재 보고 있는 날짜의 국가로 바뀐다 */}
       {activeDay && (
         <header className="flex items-baseline justify-between px-3 pb-2">
-          <div className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
-            {activeDay.countries.map((c) => countryLabel(c)).join(" → ")}
+          <div className="flex items-baseline gap-1 font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
+            {activeDay.countries.map((c, i) => (
+              <span key={c} className="flex items-baseline gap-1">
+                {i > 0 && <span className="text-[#c7b8ab]">→</span>}
+                <button type="button" onClick={() => setEditingCountry(c)} className="active:opacity-60">
+                  {countryDisplayLabel(c)}
+                </button>
+              </span>
+            ))}
           </div>
           <div className="text-right text-sm font-semibold text-[#9c8a7c]">
             <div>
@@ -188,6 +217,14 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
           timeSlots={itinerary.timeSlots}
           onClose={() => setEditingTask(null)}
           onSave={handleSaveEdit}
+        />
+      )}
+
+      {editingCountry && (
+        <CountryEditModal
+          rawLabel={editingCountry}
+          onClose={() => setEditingCountry(null)}
+          onSave={handleSaveCountry}
         />
       )}
     </div>

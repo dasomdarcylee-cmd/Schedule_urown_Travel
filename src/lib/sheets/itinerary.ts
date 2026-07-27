@@ -317,3 +317,59 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
     throw new Error(`구글시트 업데이트 HTTP ${res.status}: ${body}`);
   }
 }
+
+// 국가 헤더 텍스트(이모지+이름)를 바꾼다. 같은 국가가 시트에 여러 번 등장하면(예: 아테네를
+// 두 번 방문) 그 모든 헤더 셀을 한꺼번에 갱신한다 — 개별로 다르게 부를 이유가 없기 때문.
+export async function updateCountryLabel(env: CloudflareEnv, oldRaw: string, newRaw: string): Promise<void> {
+  let token = await getGoogleAccessToken(env);
+  const sheetId = await getSheetId(env, token);
+  let gridRes = await fetchRaw(env, token);
+  if (gridRes.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    gridRes = await fetchRaw(env, token);
+  }
+  if (!gridRes.ok) throw new Error(`구글시트 조회 HTTP ${gridRes.status}`);
+
+  const json = (await gridRes.json()) as SheetsResponse;
+  const sheet = json.sheets[0];
+  const merges = sheet.merges ?? [];
+  const grid: SheetsCell[][] = (sheet.data[0]?.rowData ?? []).map((r) => r.values ?? []);
+  const countryMerges = merges.filter((m) => m.startRowIndex === 0);
+
+  const targetCols = new Set<number>();
+  for (const m of countryMerges) {
+    if (cellText(grid[0][m.startColumnIndex]) === oldRaw) targetCols.add(m.startColumnIndex);
+  }
+  for (let c = 0; c < (grid[0]?.length ?? 0); c++) {
+    const insideMerge = countryMerges.some((m) => c >= m.startColumnIndex && c < m.endColumnIndex);
+    if (!insideMerge && cellText(grid[0][c]) === oldRaw) targetCols.add(c);
+  }
+  if (targetCols.size === 0) throw new Error("해당 국가를 시트 헤더에서 찾을 수 없음");
+
+  const requests = Array.from(targetCols).map((col) => ({
+    updateCells: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: col, endColumnIndex: col + 1 },
+      fields: "userEnteredValue",
+      rows: [{ values: [{ userEnteredValue: { stringValue: newRaw } }] }],
+    },
+  }));
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
+  let res = await fetch(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ requests }),
+  });
+  if (res.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    res = await fetch(url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ requests }),
+    });
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`구글시트 업데이트 HTTP ${res.status}: ${body}`);
+  }
+}

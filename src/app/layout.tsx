@@ -50,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
-      <body className="h-screen flex flex-col overflow-hidden bg-[#fff6ec] text-[#3a2e27]">
+      <body className="h-dvh flex flex-col overflow-hidden bg-[#fff6ec] text-[#3a2e27]">
         {children}
         <ServiceWorkerRegister />
       </body>
