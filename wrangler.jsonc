@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "travel-schedule-pwa",
+  "name": "travel1scedule0",
   "compatibility_date": "2026-07-27",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -11,7 +11,7 @@
   "kv_namespaces": [
     {
       "binding": "TOKEN_KV",
-      "id": "<wrangler kv namespace create TOKEN_KV 실행 후 반환된 id로 교체>"
+      "id": "75d06f9b831640a3bbb29d4571bc5e93"
     }
   ],
   "observability": {
