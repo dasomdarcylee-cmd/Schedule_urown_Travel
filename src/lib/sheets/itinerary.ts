@@ -2,7 +2,7 @@ import { getGoogleAccessToken } from "./googleAuth";
 import { classifyTask } from "./colors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
-import { CATEGORY_COLOR } from "../itinerary/types";
+import { CATEGORY_SHEET_COLOR } from "../itinerary/types";
 
 interface SheetsCellFormat {
   backgroundColor?: { red?: number; green?: number; blue?: number };
@@ -259,7 +259,7 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
   });
 
   // 2) 새 범위에 텍스트/비용/색상 기록
-  const color = hexToRgb01(CATEGORY_COLOR[edit.category]);
+  const color = hexToRgb01(CATEGORY_SHEET_COLOR[edit.category]);
   requests.push({
     updateCells: {
       range: {

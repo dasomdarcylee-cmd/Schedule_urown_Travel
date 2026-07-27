@@ -22,7 +22,6 @@ export function TaskChip({
       style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: color }}
     >
       <div className="font-bold truncate">{task.text}</div>
-      {task.cost != null && <div className="font-semibold opacity-90">${task.cost}</div>}
     </button>
   );
 }

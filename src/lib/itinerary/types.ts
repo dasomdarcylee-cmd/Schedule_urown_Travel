@@ -7,13 +7,22 @@ export const CATEGORY_LABEL: Record<TaskCategory, string> = {
   other: "기타",
 };
 
-// 여행 테마 파스텔 팔레트. 채도/명도만 낮췄을 뿐 색조(hue)는 원래 빨강/파랑/초록과
-// 동일하게 유지했으므로 colors.ts의 색조 기반 분류기는 그대로 동작한다.
+// 여행 테마 파스텔 팔레트 (앱 UI의 칩 배경 — 흰 글씨와 대비되도록 진하게 유지)
 export const CATEGORY_COLOR: Record<TaskCategory, string> = {
   transport: "#ff8a80",
   tour: "#5bc0de",
   food: "#7bc986",
   other: "#cbbfb2",
+};
+
+// 구글시트 셀에 실제로 써넣는 배경색 — 시트는 검정/짙은 글씨를 그대로 쓰므로 훨씬
+// 연하게 (Google Sheets 기본 팔레트의 "연한 색상 3" 계열). 색조(hue)는 위 CATEGORY_COLOR와
+// 동일하게 유지해서 colors.ts의 색조 기반 분류기가 계속 같은 카테고리로 인식한다.
+export const CATEGORY_SHEET_COLOR: Record<TaskCategory, string> = {
+  transport: "#f4cccc",
+  tour: "#c9daf8",
+  food: "#d9ead3",
+  other: "#f3f3f3",
 };
 
 export interface ItineraryTask {

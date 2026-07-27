@@ -1,6 +1,7 @@
 import type { DayColumn, ItineraryTask } from "@/lib/itinerary/types";
 import { isDayToday, nowSlotPosition } from "@/lib/itinerary/timezone";
 import { TaskChip, ROW_HEIGHT } from "./TaskChip";
+import { CostChip } from "./CostChip";
 
 export function DayCard({
   day,
@@ -34,7 +35,8 @@ export function DayCard({
           ))}
         </div>
 
-        <div className="relative flex-1 pr-1" style={{ height: gridHeight }}>
+        {/* 일정 컬럼 — 실제 시트의 왼쪽(일정) 컬럼 */}
+        <div className="relative flex-1 border-r border-dashed border-[#fbe8d4]" style={{ height: gridHeight }}>
           {timeSlots.map((_, i) => (
             <div
               key={i}
@@ -57,6 +59,20 @@ export function DayCard({
               </span>
             </div>
           )}
+        </div>
+
+        {/* 금액 컬럼 — 실제 시트의 오른쪽(금액) 컬럼과 동일한 구조 */}
+        <div className="relative w-14 shrink-0" style={{ height: gridHeight }}>
+          {timeSlots.map((_, i) => (
+            <div
+              key={i}
+              className={i % 2 === 0 ? "absolute inset-x-0 border-t border-dashed border-[#fbe8d4]" : ""}
+              style={{ top: i * ROW_HEIGHT }}
+            />
+          ))}
+          {tasks.map((task) => (
+            <CostChip key={task.id} task={task} onClick={onTaskClick} />
+          ))}
         </div>
       </div>
     </section>
