@@ -8,6 +8,7 @@ import { countryIcon } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
 import { CountryEditModal } from "./CountryEditModal";
+import { CountryIconSwatch } from "./CountryIconSwatch";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -209,9 +210,8 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
                     onClick={() => setEditingCountry(c)}
                     className="flex items-center gap-1 active:opacity-60"
                   >
-                    {icon.kind === "image" ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={icon.value} alt="" className="h-6 w-6" />
+                    {icon.kind === "swatch" ? (
+                      <CountryIconSwatch size={24} />
                     ) : (
                       <span>{icon.value}</span>
                     )}

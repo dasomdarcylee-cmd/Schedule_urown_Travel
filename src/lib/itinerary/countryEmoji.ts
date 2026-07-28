@@ -1,10 +1,11 @@
-// 국가를 대표하는 아이콘 선택지. emoji는 유니코드 문자를 그대로, image는 사용자가 직접
-// 만든 그림을 쓴다. 시트 헤더 셀에는 항상 "key + 이름" 형태의 텍스트로 저장되므로(예:
-// "🐪 두바이", "[church] 산토리니"), 구글시트에서 직접 셀 텍스트를 바꿔도 동일하게 동작한다.
+// 국가를 대표하는 아이콘 선택지. emoji는 유니코드 문자를 그대로, swatch는 어울리는
+// 이모지가 없을 때 CSS로 그린 도형을 쓴다. 시트 헤더 셀에는 항상 "key + 이름" 형태의
+// 텍스트로 저장되므로(예: "🐪 두바이", "[church] 산토리니"), 구글시트에서 직접 셀
+// 텍스트를 바꿔도 동일하게 동작한다.
 export interface CountryIconOption {
   key: string; // 시트에 저장되는 마커 텍스트
-  kind: "emoji" | "image";
-  value: string; // emoji: 표시할 문자, image: 이미지 경로
+  kind: "emoji" | "swatch";
+  value: string; // emoji일 때 표시할 문자 (swatch는 값을 쓰지 않음)
   label: string; // 드롭다운에 보여줄 설명
 }
 
@@ -26,8 +27,8 @@ export const COUNTRY_ICON_OPTIONS: CountryIconOption[] = [
   { key: "🏔️", kind: "emoji", value: "🏔️", label: "🏔️ 산맥" },
   {
     key: "[church]",
-    kind: "image",
-    value: "/country-icons/santorini-church.png",
+    kind: "swatch",
+    value: "",
     label: "🏠 파란 지붕 하얀 교회",
   },
 ];
@@ -54,7 +55,7 @@ export function joinCountryLabel(iconKey: string | null, name: string): string {
 }
 
 // 헤더에 그릴 아이콘 정보. 아직 아무것도 안 고르면 기본 마커(이모지 텍스트)를 쓴다.
-export function countryIcon(raw: string): { kind: "emoji" | "image"; value: string; name: string } {
+export function countryIcon(raw: string): { kind: "emoji" | "swatch"; value: string; name: string } {
   const { iconKey, name } = splitCountryLabel(raw);
   const opt = iconKey ? findOption(iconKey) : undefined;
   if (opt) return { kind: opt.kind, value: opt.value, name };

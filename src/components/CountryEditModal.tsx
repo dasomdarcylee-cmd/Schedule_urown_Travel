@@ -3,25 +3,17 @@
 import { useState } from "react";
 import { COUNTRY_ICON_OPTIONS, splitCountryLabel, joinCountryLabel } from "@/lib/itinerary/countryEmoji";
 import type { CountryIconOption } from "@/lib/itinerary/countryEmoji";
+import { CountryIconSwatch } from "./CountryIconSwatch";
 
 const FIELD_CLASS =
   "mt-1 w-full rounded-xl border border-[#ffe1c2] bg-[#fff9f2] px-3 py-1.5 text-sm text-[#3a2e27] focus:border-[#ff9a62] focus:outline-none";
 const LABEL_CLASS = "block text-xs font-bold text-[#9c8a7c]";
 
-// 산토리니 커스텀 이미지 옵션은 이모지가 없어서, 파란 돔+하얀 벽 느낌의 원기둥 모양 스와치로
-// 대신 표시한다 (실제 헤더에는 이 스와치가 아니라 진짜 이미지가 나옴 — 이건 목록에서만 쓰는 아이콘).
+// 산토리니 옵션은 어울리는 이모지가 없어서, 파란 돔+하얀 벽 느낌의 스와치를 대신 쓴다.
+// 이 스와치는 목록뿐 아니라 헤더 제목에도 동일하게 표시된다.
 function OptionGlyph({ option }: { option: CountryIconOption }) {
-  if (option.kind === "image") {
-    return (
-      <span
-        aria-hidden="true"
-        className="inline-block h-[18px] w-[18px] shrink-0 border border-[#d8dbe0]"
-        style={{
-          borderRadius: "9px 9px 3px 3px",
-          background: "linear-gradient(to bottom, #2f6fdb 0%, #2f6fdb 45%, #ffffff 45%, #ffffff 100%)",
-        }}
-      />
-    );
+  if (option.kind === "swatch") {
+    return <CountryIconSwatch size={18} />;
   }
   return <span className="text-base leading-none">{option.value}</span>;
 }
@@ -113,9 +105,8 @@ export function CountryEditModal({
         </div>
 
         <div className="mb-4 flex h-14 items-center justify-center rounded-xl border border-dashed border-[#ffe1c2] bg-[#fff9f2]">
-          {selectedOption?.kind === "image" ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={selectedOption.value} alt="" className="h-10 w-10" />
+          {selectedOption?.kind === "swatch" ? (
+            <CountryIconSwatch size={40} />
           ) : (
             <span className="text-2xl">{selectedOption?.value ?? "📍"}</span>
           )}
