@@ -28,6 +28,7 @@ export function TaskEditModal({
     text: string;
     cost: number | null;
     category: TaskCategory;
+    imageUrl: string | null;
   }) => Promise<void>;
 }) {
   const [text, setText] = useState(task.text);
@@ -35,6 +36,7 @@ export function TaskEditModal({
   const [category, setCategory] = useState<TaskCategory>(task.category);
   const [startSlot, setStartSlot] = useState(task.startSlot);
   const [durationSlots, setDurationSlots] = useState(task.endSlot - task.startSlot + 1);
+  const [imageUrl, setImageUrl] = useState(task.imageUrl ?? "");
   const [saving, setSaving] = useState(false);
 
   const maxDurationHere = Math.min(MAX_DURATION_SLOTS, timeSlots.length - startSlot);
@@ -50,6 +52,7 @@ export function TaskEditModal({
         text,
         cost: cost.trim() === "" ? null : Number.parseFloat(cost),
         category,
+        imageUrl: imageUrl.trim() === "" ? null : imageUrl.trim(),
       });
       onClose();
     } finally {
@@ -109,6 +112,16 @@ export function TaskEditModal({
             inputMode="decimal"
             placeholder="없음"
             onChange={(e) => setCost(e.target.value)}
+          />
+        </label>
+
+        <label className={`mb-2 ${LABEL_CLASS}`}>
+          사진 링크 (선택)
+          <input
+            className={FIELD_CLASS}
+            value={imageUrl}
+            placeholder="구글 드라이브/포토 공유 링크"
+            onChange={(e) => setImageUrl(e.target.value)}
           />
         </label>
 

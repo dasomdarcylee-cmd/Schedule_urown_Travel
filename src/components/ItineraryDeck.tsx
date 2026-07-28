@@ -9,6 +9,7 @@ import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
 import { CountryEditModal } from "./CountryEditModal";
 import { CountryIconSwatch } from "./CountryIconSwatch";
+import { ImageLightbox } from "./ImageLightbox";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -18,6 +19,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
   const [now, setNow] = useState(() => new Date());
   const [editingTask, setEditingTask] = useState<ItineraryTask | null>(null);
   const [editingCountry, setEditingCountry] = useState<string | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const revisionRef = useRef(initialItinerary.revision);
 
@@ -95,6 +97,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     text: string;
     cost: number | null;
     category: ItineraryTask["category"];
+    imageUrl: string | null;
   }) {
     if (!editingTask) return;
     const res = await fetch(`/api/itinerary/tasks/${editingTask.id}`, {
@@ -109,7 +112,15 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       ...prev,
       tasks: prev.tasks.map((t) =>
         t.id === editingTask.id
-          ? { ...t, startSlot: edit.startSlot, endSlot: edit.endSlot, text: edit.text, cost: edit.cost, category: edit.category }
+          ? {
+              ...t,
+              startSlot: edit.startSlot,
+              endSlot: edit.endSlot,
+              text: edit.text,
+              cost: edit.cost,
+              category: edit.category,
+              imageUrl: edit.imageUrl,
+            }
           : t
       ),
     }));
@@ -247,6 +258,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
             now={now}
             categoryColors={itinerary.categoryColors}
             onTaskClick={setEditingTask}
+            onOpenImage={setViewingImage}
           />
         ))}
       </div>
@@ -268,6 +280,8 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
           onSave={handleSaveCountry}
         />
       )}
+
+      {viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
     </div>
   );
 }

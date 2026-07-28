@@ -23,6 +23,7 @@ export interface ItineraryTask {
   text: string;
   cost: number | null;
   category: TaskCategory;
+  imageUrl: string | null;
 }
 
 export interface DayColumn {

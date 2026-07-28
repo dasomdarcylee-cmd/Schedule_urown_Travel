@@ -6,24 +6,43 @@ export function TaskChip({
   task,
   categoryColors,
   onClick,
+  onOpenImage,
 }: {
   task: ItineraryTask;
   categoryColors: Record<TaskCategory, string>;
   onClick?: (task: ItineraryTask) => void;
+  onOpenImage?: (url: string) => void;
 }) {
   const top = task.startSlot * ROW_HEIGHT;
   const height = (task.endSlot - task.startSlot + 1) * ROW_HEIGHT - 2;
   const color = categoryColors[task.category];
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick?.(task)}
-      className="absolute left-1 right-1 rounded-xl px-2 py-1 text-left text-xs leading-tight text-white shadow-[0_2px_4px_rgba(0,0,0,0.12)] overflow-hidden"
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onClick?.(task);
+      }}
+      className="absolute left-1 right-1 flex items-start gap-1 rounded-xl px-2 py-1 text-left text-xs leading-tight text-white shadow-[0_2px_4px_rgba(0,0,0,0.12)] overflow-hidden cursor-pointer"
       style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: color }}
     >
-      <div className="font-bold truncate">{task.text}</div>
-    </button>
+      <div className="min-w-0 flex-1 font-bold truncate">{task.text}</div>
+      {task.imageUrl && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenImage?.(task.imageUrl!);
+          }}
+          className="shrink-0 leading-none"
+          aria-label="사진 보기"
+        >
+          📷
+        </button>
+      )}
+    </div>
   );
 }
 

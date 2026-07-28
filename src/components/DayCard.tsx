@@ -10,6 +10,7 @@ export function DayCard({
   now,
   categoryColors,
   onTaskClick,
+  onOpenImage,
 }: {
   day: DayColumn;
   timeSlots: string[];
@@ -17,6 +18,7 @@ export function DayCard({
   now: Date;
   categoryColors: Record<TaskCategory, string>;
   onTaskClick?: (task: ItineraryTask) => void;
+  onOpenImage?: (url: string) => void;
 }) {
   const today = isDayToday(day, now);
   const nowPos = today ? nowSlotPosition(day, now) : null;
@@ -48,7 +50,13 @@ export function DayCard({
           ))}
 
           {tasks.map((task) => (
-            <TaskChip key={task.id} task={task} categoryColors={categoryColors} onClick={onTaskClick} />
+            <TaskChip
+              key={task.id}
+              task={task}
+              categoryColors={categoryColors}
+              onClick={onTaskClick}
+              onOpenImage={onOpenImage}
+            />
           ))}
 
           {nowPos != null && (
