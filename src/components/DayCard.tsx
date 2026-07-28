@@ -11,6 +11,7 @@ export function DayCard({
   categoryColors,
   onTaskClick,
   onOpenImage,
+  onOpenNote,
 }: {
   day: DayColumn;
   timeSlots: string[];
@@ -19,6 +20,7 @@ export function DayCard({
   categoryColors: Record<TaskCategory, string>;
   onTaskClick?: (task: ItineraryTask) => void;
   onOpenImage?: (url: string) => void;
+  onOpenNote?: (note: string) => void;
 }) {
   const today = isDayToday(day, now);
   const nowPos = today ? nowSlotPosition(day, now) : null;
@@ -56,6 +58,7 @@ export function DayCard({
               categoryColors={categoryColors}
               onClick={onTaskClick}
               onOpenImage={onOpenImage}
+              onOpenNote={onOpenNote}
             />
           ))}
 

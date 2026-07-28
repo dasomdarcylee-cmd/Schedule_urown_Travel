@@ -7,11 +7,13 @@ export function TaskChip({
   categoryColors,
   onClick,
   onOpenImage,
+  onOpenNote,
 }: {
   task: ItineraryTask;
   categoryColors: Record<TaskCategory, string>;
   onClick?: (task: ItineraryTask) => void;
   onOpenImage?: (url: string) => void;
+  onOpenNote?: (note: string) => void;
 }) {
   const top = task.startSlot * ROW_HEIGHT;
   const height = (task.endSlot - task.startSlot + 1) * ROW_HEIGHT - 2;
@@ -29,6 +31,19 @@ export function TaskChip({
       style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: color }}
     >
       <div className="min-w-0 flex-1 font-bold truncate">{task.text}</div>
+      {task.note && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNote?.(task.note!);
+          }}
+          className="shrink-0 leading-none"
+          aria-label="메모 보기"
+        >
+          ℹ️
+        </button>
+      )}
       {task.imageUrl && (
         <button
           type="button"

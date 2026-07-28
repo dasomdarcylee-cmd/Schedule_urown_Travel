@@ -10,6 +10,7 @@ import { TaskEditModal } from "./TaskEditModal";
 import { CountryEditModal } from "./CountryEditModal";
 import { CountryIconSwatch } from "./CountryIconSwatch";
 import { ImageLightbox } from "./ImageLightbox";
+import { NoteViewer } from "./NoteViewer";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -20,6 +21,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
   const [editingTask, setEditingTask] = useState<ItineraryTask | null>(null);
   const [editingCountry, setEditingCountry] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [viewingNote, setViewingNote] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const revisionRef = useRef(initialItinerary.revision);
 
@@ -98,6 +100,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     cost: number | null;
     category: ItineraryTask["category"];
     imageUrl: string | null;
+    note: string | null;
   }) {
     if (!editingTask) return;
     const res = await fetch(`/api/itinerary/tasks/${editingTask.id}`, {
@@ -120,6 +123,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
               cost: edit.cost,
               category: edit.category,
               imageUrl: edit.imageUrl,
+              note: edit.note,
             }
           : t
       ),
@@ -259,6 +263,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
             categoryColors={itinerary.categoryColors}
             onTaskClick={setEditingTask}
             onOpenImage={setViewingImage}
+            onOpenNote={setViewingNote}
           />
         ))}
       </div>
@@ -282,6 +287,8 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       )}
 
       {viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
+
+      {viewingNote && <NoteViewer note={viewingNote} onClose={() => setViewingNote(null)} />}
     </div>
   );
 }

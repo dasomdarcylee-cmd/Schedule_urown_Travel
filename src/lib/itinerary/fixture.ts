@@ -45,6 +45,7 @@ function task(
     cost,
     category,
     imageUrl: null,
+    note: null,
   };
 }
 

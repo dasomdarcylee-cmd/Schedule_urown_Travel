@@ -29,6 +29,7 @@ export function TaskEditModal({
     cost: number | null;
     category: TaskCategory;
     imageUrl: string | null;
+    note: string | null;
   }) => Promise<void>;
 }) {
   const [text, setText] = useState(task.text);
@@ -37,6 +38,7 @@ export function TaskEditModal({
   const [startSlot, setStartSlot] = useState(task.startSlot);
   const [durationSlots, setDurationSlots] = useState(task.endSlot - task.startSlot + 1);
   const [imageUrl, setImageUrl] = useState(task.imageUrl ?? "");
+  const [note, setNote] = useState(task.note ?? "");
   const [saving, setSaving] = useState(false);
 
   const maxDurationHere = Math.min(MAX_DURATION_SLOTS, timeSlots.length - startSlot);
@@ -53,6 +55,7 @@ export function TaskEditModal({
         cost: cost.trim() === "" ? null : Number.parseFloat(cost),
         category,
         imageUrl: imageUrl.trim() === "" ? null : imageUrl.trim(),
+        note: note.trim() === "" ? null : note.trim(),
       });
       onClose();
     } finally {
@@ -62,7 +65,7 @@ export function TaskEditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3a2e27]/40 p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl">
         <h2 className="mb-3 font-[family-name:var(--font-heading)] text-lg font-extrabold text-[#3a2e27]">
           ✏️ 일정 수정
         </h2>
@@ -122,6 +125,16 @@ export function TaskEditModal({
             value={imageUrl}
             placeholder="구글 드라이브/포토 공유 링크"
             onChange={(e) => setImageUrl(e.target.value)}
+          />
+        </label>
+
+        <label className={`mb-2 ${LABEL_CLASS}`}>
+          메모 (선택)
+          <textarea
+            className={`${FIELD_CLASS} min-h-20 resize-y`}
+            value={note}
+            placeholder={"장소: \n시간: \n준비물: "}
+            onChange={(e) => setNote(e.target.value)}
           />
         </label>
 

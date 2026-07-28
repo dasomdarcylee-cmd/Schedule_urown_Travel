@@ -2,7 +2,7 @@ import { getGoogleAccessToken } from "./googleAuth";
 import { classifyTask } from "./colors";
 import { getCategoryColors, lightenHexForSheet } from "./categoryColors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
-import { splitTaskText, joinTaskText } from "../itinerary/taskImage";
+import { splitTaskText, joinTaskText } from "../itinerary/taskMeta";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
 
 interface SheetsCellFormat {
@@ -128,7 +128,7 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
 
       const rawText = cellText(grid[r][leftCol]);
       if (!rawText) continue;
-      const { text, imageUrl } = splitTaskText(rawText);
+      const { text, imageUrl, note } = splitTaskText(rawText);
 
       const startSlot = r - 2;
       const endSlot = merge ? merge.endRowIndex - 1 - 2 : startSlot;
@@ -152,6 +152,7 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
         cost,
         category: cellCategory(grid[r][leftCol]),
         imageUrl,
+        note,
       });
     }
   }
@@ -199,6 +200,7 @@ export interface TaskEdit {
   cost: number | null;
   category: TaskCategory;
   imageUrl: string | null;
+  note: string | null;
 }
 
 function hexToRgb01(hex: string) {
@@ -280,7 +282,7 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
         {
           values: [
             {
-              userEnteredValue: { stringValue: joinTaskText(edit.text, edit.imageUrl) },
+              userEnteredValue: { stringValue: joinTaskText(edit.text, edit.imageUrl, edit.note) },
               userEnteredFormat: { backgroundColor: color },
             },
             { userEnteredValue: edit.cost != null ? { numberValue: edit.cost } : null },

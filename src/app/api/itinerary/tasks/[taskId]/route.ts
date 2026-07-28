@@ -10,6 +10,7 @@ interface PatchBody {
   cost: number | null;
   category: TaskCategory;
   imageUrl: string | null;
+  note: string | null;
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ taskId: string }> }) {
@@ -35,6 +36,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ taskId
       cost: body.cost,
       category: body.category,
       imageUrl: body.imageUrl,
+      note: body.note,
     });
     return Response.json({ ok: true });
   } catch (e) {
