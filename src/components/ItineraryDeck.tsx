@@ -198,11 +198,11 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       {/* 스와이프해도 이 제목 영역은 고정, 텍스트만 현재 보고 있는 날짜의 국가로 바뀐다 */}
       {activeDay && (
         <header className="flex items-baseline justify-between px-3 pb-2">
-          <div className="flex items-baseline gap-1 font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
+          <div className="flex items-center gap-1 font-[family-name:var(--font-heading)] text-xl font-extrabold text-[#3a2e27]">
             {activeDay.countries.map((c, i) => {
               const icon = countryIcon(c);
               return (
-                <span key={c} className="flex items-baseline gap-1">
+                <span key={c} className="flex items-center gap-1">
                   {i > 0 && <span className="text-[#c7b8ab]">→</span>}
                   <button
                     type="button"
