@@ -31,7 +31,9 @@ export interface DayColumn {
   dayIndex: number; // 1-based
   date: string; // e.g. "8-26"
   weekday: string; // e.g. "Wed"
-  countries: string[]; // 이동일엔 2개국 모두 표시
+  countries: string[]; // 이동일엔 2개국 모두 표시 (soloDay가 true면 항상 1개)
+  soloDay: boolean; // true면 다음 날짜 국가가 달라도 이 날은 국가 1개만 표시
+  nextCountry: string | null; // 다음 날짜 국가(현재와 다를 때만) — 이동 표시 토글에 사용
 }
 
 export interface Itinerary {

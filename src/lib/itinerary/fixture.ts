@@ -14,17 +14,45 @@ function slot(hour: number, minute: 0 | 30): number {
 }
 
 const DAYS: DayColumn[] = [
-  { dayIndex: 1, date: "8-26", weekday: "Wed", countries: ["두바이"] },
-  { dayIndex: 2, date: "8-27", weekday: "Thu", countries: ["두바이"] },
-  { dayIndex: 3, date: "8-28", weekday: "Fri", countries: ["두바이", "아테네"] },
-  { dayIndex: 4, date: "8-29", weekday: "Sat", countries: ["아테네"] },
-  { dayIndex: 5, date: "8-30", weekday: "Sun", countries: ["아테네", "산토리니"] },
-  { dayIndex: 6, date: "8-31", weekday: "Mon", countries: ["산토리니"] },
-  { dayIndex: 7, date: "9-1", weekday: "Tue", countries: ["산토리니"] },
-  { dayIndex: 8, date: "9-2", weekday: "Wed", countries: ["산토리니", "아테네"] },
-  { dayIndex: 9, date: "9-3", weekday: "Thu", countries: ["아테네"] },
-  { dayIndex: 10, date: "9-4", weekday: "Fri", countries: ["아테네", "한국"] },
-  { dayIndex: 11, date: "9-5", weekday: "Sat", countries: ["한국"] },
+  { dayIndex: 1, date: "8-26", weekday: "Wed", countries: ["두바이"], soloDay: false, nextCountry: null },
+  { dayIndex: 2, date: "8-27", weekday: "Thu", countries: ["두바이"], soloDay: false, nextCountry: null },
+  {
+    dayIndex: 3,
+    date: "8-28",
+    weekday: "Fri",
+    countries: ["두바이", "아테네"],
+    soloDay: false,
+    nextCountry: "아테네",
+  },
+  { dayIndex: 4, date: "8-29", weekday: "Sat", countries: ["아테네"], soloDay: false, nextCountry: null },
+  {
+    dayIndex: 5,
+    date: "8-30",
+    weekday: "Sun",
+    countries: ["아테네", "산토리니"],
+    soloDay: false,
+    nextCountry: "산토리니",
+  },
+  { dayIndex: 6, date: "8-31", weekday: "Mon", countries: ["산토리니"], soloDay: false, nextCountry: null },
+  { dayIndex: 7, date: "9-1", weekday: "Tue", countries: ["산토리니"], soloDay: false, nextCountry: null },
+  {
+    dayIndex: 8,
+    date: "9-2",
+    weekday: "Wed",
+    countries: ["산토리니", "아테네"],
+    soloDay: false,
+    nextCountry: "아테네",
+  },
+  { dayIndex: 9, date: "9-3", weekday: "Thu", countries: ["아테네"], soloDay: false, nextCountry: null },
+  {
+    dayIndex: 10,
+    date: "9-4",
+    weekday: "Fri",
+    countries: ["아테네", "한국"],
+    soloDay: false,
+    nextCountry: "한국",
+  },
+  { dayIndex: 11, date: "9-5", weekday: "Sat", countries: ["한국"], soloDay: false, nextCountry: null },
 ];
 
 function task(

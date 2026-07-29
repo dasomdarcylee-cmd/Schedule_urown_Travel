@@ -150,6 +150,25 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     }));
   }
 
+  async function handleToggleSolo(dayIndex: number, solo: boolean) {
+    const res = await fetch(`/api/itinerary/days/${dayIndex}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ solo }),
+    });
+    if (!res.ok) throw new Error("저장 실패");
+
+    // 낙관적 업데이트: nextCountry는 그대로 두고 countries/soloDay만 다시 계산
+    setItinerary((prev) => ({
+      ...prev,
+      days: prev.days.map((d) =>
+        d.dayIndex === dayIndex
+          ? { ...d, soloDay: solo, countries: solo || !d.nextCountry ? [d.countries[0]] : [d.countries[0], d.nextCountry] }
+          : d
+      ),
+    }));
+  }
+
   async function handleCategoryColorChange(category: TaskCategory, color: string) {
     // 낙관적 업데이트: 즉시 앱 전체(범례+칩)에 반영, 시트 재색칠은 백그라운드에서 진행
     setItinerary((prev) => ({
@@ -235,6 +254,15 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
                 </span>
               );
             })}
+            {activeDay.nextCountry && (
+              <button
+                type="button"
+                onClick={() => handleToggleSolo(activeDay.dayIndex, !activeDay.soloDay)}
+                className="ml-1 rounded-full bg-[#fff3e6] px-2 py-0.5 text-[10px] font-bold text-[#c7935c] active:opacity-60"
+              >
+                {activeDay.soloDay ? "+ 다음 국가 표시" : "이 날은 국가 하나만"}
+              </button>
+            )}
           </div>
           <div className="text-right text-sm text-[#9c8a7c]">
             <div className="font-bold text-black">

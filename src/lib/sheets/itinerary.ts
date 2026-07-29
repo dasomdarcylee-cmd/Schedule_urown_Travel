@@ -3,6 +3,7 @@ import { classifyTask } from "./colors";
 import { getCategoryColors, lightenHexForSheet } from "./categoryColors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import { splitTaskText, joinTaskText } from "../itinerary/taskMeta";
+import { hasSoloMarker, stripSoloMarker, toggleSoloMarker } from "../itinerary/dayFlags";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
 
 interface SheetsCellFormat {
@@ -106,15 +107,19 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
   const dayCountries = dayPairs.map((p) => countryAt(p.leftCol));
   const days: DayColumn[] = dayPairs.map((pair, i) => {
     const dayLabelRaw = cellText(grid[1][pair.leftCol]);
-    const dateWeekdayRaw = cellText(grid[1][pair.rightCol]);
+    const dateWeekdayRawWithMarker = cellText(grid[1][pair.rightCol]);
+    const soloDay = hasSoloMarker(dateWeekdayRawWithMarker);
+    const dateWeekdayRaw = stripSoloMarker(dateWeekdayRawWithMarker);
     const dayIndex = Number.parseInt(dayLabelRaw, 10) || i + 1;
     const [date, weekday] = splitDateWeekday(dateWeekdayRaw);
 
+    // 다음 날짜 국가가 다를 때만 "이동일" 후보가 된다 — soloDay 마커로 이 날 하나만 끌 수 있다
+    // (국가 헤더는 여러 날짜에 걸쳐 병합돼 있어서 날짜별로 따로 설정할 수 없기 때문).
+    const nextCountry =
+      i < dayPairs.length - 1 && dayCountries[i + 1] !== dayCountries[i] ? dayCountries[i + 1] : null;
     const countries = [dayCountries[i]];
-    if (i < dayPairs.length - 1 && dayCountries[i + 1] !== dayCountries[i]) {
-      countries.push(dayCountries[i + 1]);
-    }
-    return { dayIndex, date, weekday, countries };
+    if (!soloDay && nextCountry) countries.push(nextCountry);
+    return { dayIndex, date, weekday, countries, soloDay, nextCountry };
   });
 
   const tasks: ItineraryTask[] = [];
@@ -364,6 +369,56 @@ export async function updateCountryLabel(env: CloudflareEnv, oldRaw: string, new
       rows: [{ values: [{ userEnteredValue: { stringValue: newRaw } }] }],
     },
   }));
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
+  let res = await fetch(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ requests }),
+  });
+  if (res.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    res = await fetch(url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ requests }),
+    });
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`구글시트 업데이트 HTTP ${res.status}: ${body}`);
+  }
+}
+
+// 특정 날짜 하나만 "다음 날짜 국가 표시 끄기"를 켜거나 끈다. 국가 헤더 셀은 여러 날짜에
+// 걸쳐 병합돼 있어 날짜별로 따로 설정할 수 없으므로, 병합되지 않은 날짜/요일 셀에
+// soloDay 마커를 붙여 이 날짜 하나에만 적용되는 설정으로 저장한다.
+export async function updateDaySolo(env: CloudflareEnv, dayIndex: number, solo: boolean): Promise<void> {
+  let token = await getGoogleAccessToken(env);
+  const [sheetId, gridRes0] = await Promise.all([getSheetId(env, token), fetchRaw(env, token)]);
+  let gridRes = gridRes0;
+  if (gridRes.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    gridRes = await fetchRaw(env, token);
+  }
+  if (!gridRes.ok) throw new Error(`구글시트 조회 HTTP ${gridRes.status}`);
+
+  const json = (await gridRes.json()) as SheetsResponse;
+  const sheet = json.sheets[0];
+  const grid: SheetsCell[][] = (sheet.data[0]?.rowData ?? []).map((r) => r.values ?? []);
+  const { rightCol } = dayColumns(dayIndex);
+  const currentRaw = cellText(grid[1]?.[rightCol]);
+  const newRaw = toggleSoloMarker(currentRaw, solo);
+
+  const requests = [
+    {
+      updateCells: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: rightCol, endColumnIndex: rightCol + 1 },
+        fields: "userEnteredValue",
+        rows: [{ values: [{ userEnteredValue: { stringValue: newRaw } }] }],
+      },
+    },
+  ];
 
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
   let res = await fetch(url, {
