@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
 import { CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { formatDurationSlots } from "@/lib/itinerary/timeSlots";
+import { normalizeImageUrl } from "@/lib/itinerary/driveLink";
 
 const MAX_DURATION_SLOTS = 16; // 최대 8시간
 const FIELD_CLASS =
@@ -54,7 +55,7 @@ export function TaskEditModal({
         text,
         cost: cost.trim() === "" ? null : Number.parseFloat(cost),
         category,
-        imageUrl: imageUrl.trim() === "" ? null : imageUrl.trim(),
+        imageUrl: imageUrl.trim() === "" ? null : normalizeImageUrl(imageUrl.trim()),
         note: note.trim() === "" ? null : note.trim(),
       });
       onClose();

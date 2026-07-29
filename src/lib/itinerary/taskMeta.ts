@@ -1,3 +1,5 @@
+import { normalizeImageUrl } from "./driveLink";
+
 // 일정 셀 텍스트 끝에 "[img:URL]", "[note:내용]" 같은 마커를 붙여 사진/메모를 저장한다
 // (countryEmoji.ts의 "[church] 산토리니" 마커 방식과 동일한 아이디어) — 시트 컬럼 구조를
 // 바꾸지 않고도 부가 정보를 특정 일정에 매달아 둘 수 있다.
@@ -10,7 +12,7 @@ export function splitTaskText(raw: string): { text: string; imageUrl: string | n
   const text = raw
     .replace(MARKER_RE, (_match, key: string, value: string) => {
       const trimmed = value.trim();
-      if (key === "img") imageUrl = trimmed || null;
+      if (key === "img") imageUrl = trimmed ? normalizeImageUrl(trimmed) : null;
       else if (key === "note") note = trimmed || null;
       return "";
     })
