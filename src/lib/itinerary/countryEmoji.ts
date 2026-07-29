@@ -61,3 +61,17 @@ export function countryIcon(raw: string): { kind: "emoji" | "swatch"; value: str
   if (opt) return { kind: opt.kind, value: opt.value, name };
   return { kind: "emoji", value: DEFAULT_EMOJI, name };
 }
+
+// 이동일 하나를 정확히 표시하고 싶을 때, 그 날짜의 국가 헤더 칸(병합 없이 독립된 칸)에
+// "아테네 -> 산토리니"처럼 직접 적어두면 그 텍스트 그대로 두 국가로 나눠서 보여준다.
+// "->", "-->", "→" 중 아무거나 써도 동일하게 인식된다.
+const TRANSITION_DELIM_RE = /\s*(?:-->|->|→)\s*/;
+const HAS_TRANSITION_RE = /-->|->|→/;
+
+export function splitTransitionCountries(raw: string): string[] {
+  if (!HAS_TRANSITION_RE.test(raw)) return [raw];
+  return raw
+    .split(TRANSITION_DELIM_RE)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}

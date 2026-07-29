@@ -4,6 +4,7 @@ import { getCategoryColors, lightenHexForSheet } from "./categoryColors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import { splitTaskText, joinTaskText } from "../itinerary/taskMeta";
 import { hasSoloMarker, stripSoloMarker, toggleSoloMarker } from "../itinerary/dayFlags";
+import { splitTransitionCountries } from "../itinerary/countryEmoji";
 import type { DayColumn, Itinerary, ItineraryTask, TaskCategory } from "../itinerary/types";
 
 interface SheetsCellFormat {
@@ -104,7 +105,12 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
     dayPairs.push({ leftCol: c, rightCol: c + 1 });
   }
 
-  const dayCountries = dayPairs.map((p) => countryAt(p.leftCol));
+  // 이동일을 정확히 표시하고 싶은 날짜는 그 헤더 칸(병합 없이 독립된 칸)에 직접
+  // "아테네 -> 산토리니"처럼 적어둘 수 있다. 그런 날은 그 텍스트를 그대로 나눠서 쓰고,
+  // 자동 감지(다음 날짜와 비교)/soloDay 토글은 적용하지 않는다.
+  const dayRawCountries = dayPairs.map((p) => countryAt(p.leftCol));
+  const dayPrimaryCountries = dayRawCountries.map((raw) => splitTransitionCountries(raw)[0]);
+
   const days: DayColumn[] = dayPairs.map((pair, i) => {
     const dayLabelRaw = cellText(grid[1][pair.leftCol]);
     const dateWeekdayRawWithMarker = cellText(grid[1][pair.rightCol]);
@@ -113,13 +119,24 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
     const dayIndex = Number.parseInt(dayLabelRaw, 10) || i + 1;
     const [date, weekday] = splitDateWeekday(dateWeekdayRaw);
 
+    const rawCountryText = dayRawCountries[i];
+    const explicitParts = splitTransitionCountries(rawCountryText);
+    const explicit = explicitParts.length > 1;
+
     // 다음 날짜 국가가 다를 때만 "이동일" 후보가 된다 — soloDay 마커로 이 날 하나만 끌 수 있다
     // (국가 헤더는 여러 날짜에 걸쳐 병합돼 있어서 날짜별로 따로 설정할 수 없기 때문).
     const nextCountry =
-      i < dayPairs.length - 1 && dayCountries[i + 1] !== dayCountries[i] ? dayCountries[i + 1] : null;
-    const countries = [dayCountries[i]];
-    if (!soloDay && nextCountry) countries.push(nextCountry);
-    return { dayIndex, date, weekday, countries, soloDay, nextCountry };
+      i < dayPairs.length - 1 && dayPrimaryCountries[i + 1] !== dayPrimaryCountries[i]
+        ? dayPrimaryCountries[i + 1]
+        : null;
+
+    const countries = explicit
+      ? explicitParts
+      : !soloDay && nextCountry
+        ? [dayPrimaryCountries[i], nextCountry]
+        : [dayPrimaryCountries[i]];
+
+    return { dayIndex, date, weekday, countries, soloDay, nextCountry, explicit, rawCountryText };
   });
 
   const tasks: ItineraryTask[] = [];

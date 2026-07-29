@@ -34,6 +34,8 @@ export interface DayColumn {
   countries: string[]; // 이동일엔 2개국 모두 표시 (soloDay가 true면 항상 1개)
   soloDay: boolean; // true면 다음 날짜 국가가 달라도 이 날은 국가 1개만 표시
   nextCountry: string | null; // 다음 날짜 국가(현재와 다를 때만) — 이동 표시 토글에 사용
+  explicit: boolean; // true면 이 날짜 헤더 칸 자체에 "->"가 있어 그 텍스트 그대로 표시 (토글 무관)
+  rawCountryText: string; // 이 날짜 국가 헤더 칸의 원본 텍스트 — 수정 시 정확한 매칭에 사용
 }
 
 export interface Itinerary {

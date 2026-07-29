@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Itinerary, ItineraryTask, TaskCategory } from "@/lib/itinerary/types";
 import { CATEGORY_LABEL } from "@/lib/itinerary/types";
 import { findTodayDayIndex } from "@/lib/itinerary/timezone";
-import { countryIcon } from "@/lib/itinerary/countryEmoji";
+import { countryIcon, splitTransitionCountries } from "@/lib/itinerary/countryEmoji";
 import { DayCard } from "./DayCard";
 import { TaskEditModal } from "./TaskEditModal";
 import { CountryEditModal } from "./CountryEditModal";
@@ -143,10 +143,24 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     // 같은 국가가 여러 날에 걸쳐 등장하면 전부 함께 바뀐다 (서버와 동일한 규칙)
     setItinerary((prev) => ({
       ...prev,
-      days: prev.days.map((d) => ({
-        ...d,
-        countries: d.countries.map((c) => (c === oldRaw ? newRaw : c)),
-      })),
+      days: prev.days.map((d) => {
+        if (d.rawCountryText === oldRaw) {
+          // 이 날짜의 헤더 칸 자체가 편집된 경우 (단일 국가든 "A -> B" 조합이든)
+          const parts = splitTransitionCountries(newRaw);
+          const explicit = parts.length > 1;
+          const countries = explicit
+            ? parts
+            : !d.soloDay && d.nextCountry
+              ? [parts[0], d.nextCountry]
+              : [parts[0]];
+          return { ...d, rawCountryText: newRaw, explicit, countries };
+        }
+        if (d.nextCountry === oldRaw) {
+          // 다른 날짜 헤더가 바뀌어서, 이 날짜엔 "다음 날짜 국가"로 끼워 보이던 이름만 갱신
+          return { ...d, nextCountry: newRaw, countries: d.countries.map((c) => (c === oldRaw ? newRaw : c)) };
+        }
+        return d;
+      }),
     }));
   }
 
@@ -241,7 +255,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
                   {i > 0 && <span className="text-[#c7b8ab]">→</span>}
                   <button
                     type="button"
-                    onClick={() => setEditingCountry(c)}
+                    onClick={() => setEditingCountry(activeDay.explicit ? activeDay.rawCountryText : c)}
                     className="flex items-center gap-1 active:opacity-60"
                   >
                     {icon.kind === "swatch" ? (
@@ -254,7 +268,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
                 </span>
               );
             })}
-            {activeDay.nextCountry && (
+            {!activeDay.explicit && activeDay.nextCountry && (
               <button
                 type="button"
                 onClick={() => handleToggleSolo(activeDay.dayIndex, !activeDay.soloDay)}
