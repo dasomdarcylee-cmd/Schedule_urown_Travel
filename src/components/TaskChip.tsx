@@ -17,6 +17,7 @@ export function TaskChip({
 }) {
   const top = task.startSlot * ROW_HEIGHT;
   const height = (task.endSlot - task.startSlot + 1) * ROW_HEIGHT - 2;
+  const isNone = task.category === "none";
   const color = categoryColors[task.category];
 
   return (
@@ -27,8 +28,12 @@ export function TaskChip({
       onKeyDown={(e) => {
         if (e.key === "Enter") onClick?.(task);
       }}
-      className="absolute left-1 right-1 flex items-start gap-1 rounded-xl px-2 py-1 text-left text-xs leading-tight text-white shadow-[0_2px_4px_rgba(0,0,0,0.12)] overflow-hidden cursor-pointer"
-      style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: color }}
+      className={`absolute left-1 right-1 flex items-start gap-1 rounded-xl px-2 py-1 text-left text-xs leading-tight overflow-hidden cursor-pointer ${
+        isNone
+          ? "border border-dashed border-[#c7b8ab] text-[#8a7566]"
+          : "text-white shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
+      }`}
+      style={{ top, height, minHeight: ROW_HEIGHT - 2, backgroundColor: isNone ? "transparent" : color }}
     >
       <div className="min-w-0 flex-1 font-bold truncate">{task.text}</div>
       {task.note && (

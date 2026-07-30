@@ -155,8 +155,12 @@ export function TaskEditModal({
                 }}
               >
                 <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: categoryColors[key] }}
+                  className="inline-block h-2 w-2 rounded-full border"
+                  style={
+                    key === "none"
+                      ? { backgroundColor: "transparent", borderColor: "#9c8a7c" }
+                      : { backgroundColor: categoryColors[key], borderColor: categoryColors[key] }
+                  }
                 />
                 {CATEGORY_LABEL[key]}
               </button>

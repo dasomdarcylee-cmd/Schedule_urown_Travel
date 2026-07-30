@@ -167,7 +167,7 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
 
       const rawText = cellText(grid[r][leftCol]);
       if (!rawText) continue;
-      const { text, imageUrl, note } = splitTaskText(rawText);
+      const { text, imageUrl, note, noCategory } = splitTaskText(rawText);
 
       const startSlot = r - 2;
       const endSlot = merge ? merge.endRowIndex - 1 - 2 : startSlot;
@@ -189,7 +189,7 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
         endSlot,
         text,
         cost,
-        category: cellCategory(grid[r][leftCol], categoryColors),
+        category: noCategory ? "none" : cellCategory(grid[r][leftCol], categoryColors),
         imageUrl,
         note,
       });
@@ -308,8 +308,9 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
     },
   });
 
-  // 2) 새 범위에 텍스트/비용/색상 기록
-  const color = hexToRgb01(lightenHexForSheet(categoryColors[edit.category]));
+  // 2) 새 범위에 텍스트/비용/색상 기록 — "색없음"은 배경색을 아예 안 칠한다(지운다)
+  const noCategory = edit.category === "none";
+  const backgroundColor = noCategory ? undefined : hexToRgb01(lightenHexForSheet(categoryColors[edit.category]));
   requests.push({
     updateCells: {
       range: {
@@ -324,8 +325,8 @@ export async function updateTask(env: CloudflareEnv, edit: TaskEdit): Promise<vo
         {
           values: [
             {
-              userEnteredValue: { stringValue: joinTaskText(edit.text, edit.imageUrl, edit.note) },
-              userEnteredFormat: { backgroundColor: color },
+              userEnteredValue: { stringValue: joinTaskText(edit.text, edit.imageUrl, edit.note, noCategory) },
+              userEnteredFormat: backgroundColor ? { backgroundColor } : {},
             },
             { userEnteredValue: edit.cost != null ? { numberValue: edit.cost } : null },
           ],

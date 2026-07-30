@@ -5,16 +5,18 @@ export const CATEGORY_LABEL: Record<TaskCategory, string> = {
   tour: "여행 투어",
   food: "식사 및 숙소",
   other: "기타",
-  none: "해당없음",
+  none: "색없음",
 };
 
 // 여행 테마 파스텔 팔레트 (앱 UI의 칩 배경 — 흰 글씨와 대비되도록 진하게 유지)
+// none(색없음)은 배경색을 아예 안 칠하므로 여기 값은 UI에서 실제로 쓰이지 않는다
+// (타입 완전성을 위해 자리만 채워둠).
 export const CATEGORY_COLOR: Record<TaskCategory, string> = {
   transport: "#ff8a80",
   tour: "#5bc0de",
   food: "#7bc986",
   other: "#cbbfb2",
-  none: "#a8a29a",
+  none: "#9c8a7c",
 };
 
 export interface ItineraryTask {

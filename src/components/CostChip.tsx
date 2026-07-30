@@ -14,7 +14,7 @@ export function CostChip({
 }) {
   if (task.cost == null) return null;
   const top = task.startSlot * ROW_HEIGHT;
-  const color = categoryColors[task.category];
+  const color = task.category === "none" ? "#8a7566" : categoryColors[task.category];
 
   return (
     <button

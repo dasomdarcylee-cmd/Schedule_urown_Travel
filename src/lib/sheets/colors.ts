@@ -27,13 +27,15 @@ function colorsClose(a: RgbColor, b: RgbColor): boolean {
 // 앱에서 카테고리를 고르면 그 카테고리의 (밝게 조정된) 색을 셀 배경에 정확히 칠한다
 // (updateTask 참고). 그러니 셀 색이 현재 설정된 카테고리 색 중 하나와 (거의) 정확히
 // 일치하면, 색조 버킷 추정 없이 그 카테고리로 바로 확정한다 — "기타"처럼 채도가 낮아
-// 색조 버킷이 애매한 카테고리도 정확히 구분되고, "해당없음"도 이 방식으로만 구분 가능하다.
+// 색조 버킷이 애매한 카테고리도 정확히 구분된다. "none"(색없음)은 배경색을 아예 안
+// 칠하므로 여기서 제외한다 — [nocat] 텍스트 마커로 따로 구분한다(taskMeta.ts 참고).
 function matchConfiguredCategory(
   color: RgbColor | null | undefined,
   categoryColors: CategoryColorMap
 ): TaskCategory | null {
   if (!color) return null;
   for (const key of Object.keys(categoryColors) as TaskCategory[]) {
+    if (key === "none") continue;
     const painted = hexToRgb01(lightenHexForSheet(categoryColors[key]));
     if (colorsClose(color, painted)) return key;
   }
