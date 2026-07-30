@@ -279,7 +279,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
       <div className="flex items-center justify-between gap-3 px-3 py-2">
         <div className="flex gap-2.5 text-xs font-semibold text-[#9c8a7c]">
           {Object.entries(CATEGORY_LABEL)
-            .filter(([key]) => key !== "other")
+            .filter(([key]) => key !== "other" && key !== "none")
             .map(([key, label]) => (
               <label key={key} className="flex items-center gap-1 cursor-pointer">
                 <span

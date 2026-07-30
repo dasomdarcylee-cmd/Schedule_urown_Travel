@@ -1,6 +1,6 @@
 import { getGoogleAccessToken } from "./googleAuth";
 import { classifyTask } from "./colors";
-import { getCategoryColors, lightenHexForSheet } from "./categoryColors";
+import { getCategoryColors, lightenHexForSheet, hexToRgb01 } from "./categoryColors";
 import { generateTimeSlotsByCount } from "../itinerary/timeSlots";
 import { splitTaskText, joinTaskText } from "../itinerary/taskMeta";
 import { hasSoloMarker, stripSoloMarker, toggleSoloMarker } from "../itinerary/dayFlags";
@@ -44,9 +44,9 @@ function cellText(cell: SheetsCell | undefined): string {
   return cell?.formattedValue?.trim() ?? "";
 }
 
-function cellCategory(cell: SheetsCell | undefined) {
+function cellCategory(cell: SheetsCell | undefined, categoryColors?: Record<TaskCategory, string>) {
   const color = cell?.effectiveFormat?.backgroundColor ?? cell?.userEnteredFormat?.backgroundColor;
-  return classifyTask(cellText(cell), color ?? null);
+  return classifyTask(cellText(cell), color ?? null, categoryColors);
 }
 
 function parseCost(text: string): number | null {
@@ -189,7 +189,7 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
         endSlot,
         text,
         cost,
-        category: cellCategory(grid[r][leftCol]),
+        category: cellCategory(grid[r][leftCol], categoryColors),
         imageUrl,
         note,
       });
@@ -248,11 +248,6 @@ export interface TaskEdit {
   category: TaskCategory;
   imageUrl: string | null;
   note: string | null;
-}
-
-function hexToRgb01(hex: string) {
-  const n = Number.parseInt(hex.replace("#", ""), 16);
-  return { red: ((n >> 16) & 255) / 255, green: ((n >> 8) & 255) / 255, blue: (n & 255) / 255 };
 }
 
 async function getSheetId(env: CloudflareEnv, token: string): Promise<number> {

@@ -37,3 +37,8 @@ export function lightenHexForSheet(hex: string, amount = 0.72): string {
   const mix = (c: number) => Math.round(c + (255 - c) * amount);
   return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
+
+export function hexToRgb01(hex: string) {
+  const n = Number.parseInt(hex.replace("#", ""), 16);
+  return { red: ((n >> 16) & 255) / 255, green: ((n >> 8) & 255) / 255, blue: (n & 255) / 255 };
+}

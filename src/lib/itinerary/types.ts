@@ -1,10 +1,11 @@
-export type TaskCategory = "transport" | "tour" | "food" | "other";
+export type TaskCategory = "transport" | "tour" | "food" | "other" | "none";
 
 export const CATEGORY_LABEL: Record<TaskCategory, string> = {
   transport: "교통편",
   tour: "여행 투어",
   food: "식사 및 숙소",
   other: "기타",
+  none: "해당없음",
 };
 
 // 여행 테마 파스텔 팔레트 (앱 UI의 칩 배경 — 흰 글씨와 대비되도록 진하게 유지)
@@ -13,6 +14,7 @@ export const CATEGORY_COLOR: Record<TaskCategory, string> = {
   tour: "#5bc0de",
   food: "#7bc986",
   other: "#cbbfb2",
+  none: "#a8a29a",
 };
 
 export interface ItineraryTask {
