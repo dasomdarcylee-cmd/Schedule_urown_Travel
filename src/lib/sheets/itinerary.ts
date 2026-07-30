@@ -105,10 +105,13 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
     dayPairs.push({ leftCol: c, rightCol: c + 1 });
   }
 
-  // 이동일을 정확히 표시하고 싶은 날짜는 그 헤더 칸(병합 없이 독립된 칸)에 직접
-  // "아테네 -> 산토리니"처럼 적어둘 수 있다. 그런 날은 그 텍스트를 그대로 나눠서 쓰고,
-  // 자동 감지(다음 날짜와 비교)/soloDay 토글은 적용하지 않는다.
+  // 이동일을 정확히 표시하고 싶은 날짜는 두 가지 방식을 쓸 수 있다:
+  // 1) 왼쪽(일정) 칸 하나에 직접 "아테네 -> 산토리니"처럼 화살표로 적기 (예전 방식)
+  // 2) 왼쪽엔 체류국, 오른쪽(원래 금액 칸 자리, 헤더 행에서는 비어있음)엔 이동국(도착국)을
+  //    따로 적기 — 둘 다 병합 없이 독립된 칸이어야 한다.
+  // 둘 다 자동 감지(다음 날짜와 비교)/soloDay 토글보다 우선하며, 그 텍스트를 그대로 쓴다.
   const dayRawCountries = dayPairs.map((p) => countryAt(p.leftCol));
+  const dayRightRawCountries = dayPairs.map((p) => countryAt(p.rightCol));
   const dayPrimaryCountries = dayRawCountries.map((raw) => splitTransitionCountries(raw)[0]);
 
   const days: DayColumn[] = dayPairs.map((pair, i) => {
@@ -119,9 +122,9 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
     const dayIndex = Number.parseInt(dayLabelRaw, 10) || i + 1;
     const [date, weekday] = splitDateWeekday(dateWeekdayRaw);
 
-    const rawCountryText = dayRawCountries[i];
-    const explicitParts = splitTransitionCountries(rawCountryText);
-    const explicit = explicitParts.length > 1;
+    const leftRaw = dayRawCountries[i];
+    const rightRaw = dayRightRawCountries[i];
+    const legacyParts = splitTransitionCountries(leftRaw);
 
     // 다음 날짜 국가가 다를 때만 "이동일" 후보가 된다 — soloDay 마커로 이 날 하나만 끌 수 있다
     // (국가 헤더는 여러 날짜에 걸쳐 병합돼 있어서 날짜별로 따로 설정할 수 없기 때문).
@@ -130,13 +133,27 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
         ? dayPrimaryCountries[i + 1]
         : null;
 
-    const countries = explicit
-      ? explicitParts
-      : !soloDay && nextCountry
-        ? [dayPrimaryCountries[i], nextCountry]
-        : [dayPrimaryCountries[i]];
+    let countries: string[];
+    let countryRawTexts: string[];
+    let explicit: boolean;
+    let movingCountryColumn = false;
 
-    return { dayIndex, date, weekday, countries, soloDay, nextCountry, explicit, rawCountryText };
+    if (legacyParts.length > 1) {
+      countries = legacyParts;
+      countryRawTexts = legacyParts.map(() => leftRaw);
+      explicit = true;
+    } else if (rightRaw && rightRaw !== leftRaw) {
+      countries = [leftRaw, rightRaw];
+      countryRawTexts = [leftRaw, rightRaw];
+      explicit = true;
+      movingCountryColumn = true;
+    } else {
+      explicit = false;
+      countries = !soloDay && nextCountry ? [dayPrimaryCountries[i], nextCountry] : [dayPrimaryCountries[i]];
+      countryRawTexts = countries;
+    }
+
+    return { dayIndex, date, weekday, countries, countryRawTexts, soloDay, nextCountry, explicit, movingCountryColumn };
   });
 
   const tasks: ItineraryTask[] = [];
@@ -436,6 +453,100 @@ export async function updateDaySolo(env: CloudflareEnv, dayIndex: number, solo: 
       },
     },
   ];
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
+  let res = await fetch(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ requests }),
+  });
+  if (res.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    res = await fetch(url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ requests }),
+    });
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`구글시트 업데이트 HTTP ${res.status}: ${body}`);
+  }
+}
+
+// 특정 날짜의 국가 헤더 오른쪽(이동국가) 칸을 설정/해제한다. 이 날짜가 다른 날짜들과
+// 국가 헤더 병합에 걸쳐 있으면, 그 병합을 필요한 만큼만 쪼개서 이 날짜의 왼쪽 칸(체류국,
+// 원래 텍스트 유지)과 오른쪽 칸(이동국)을 독립시킨 다음 오른쪽 칸에 값을 써넣는다.
+export async function setDayMovingCountry(
+  env: CloudflareEnv,
+  dayIndex: number,
+  newRaw: string | null
+): Promise<void> {
+  let token = await getGoogleAccessToken(env);
+  const [sheetId, gridRes0] = await Promise.all([getSheetId(env, token), fetchRaw(env, token)]);
+  let gridRes = gridRes0;
+  if (gridRes.status === 401) {
+    token = await getGoogleAccessToken(env, true);
+    gridRes = await fetchRaw(env, token);
+  }
+  if (!gridRes.ok) throw new Error(`구글시트 조회 HTTP ${gridRes.status}`);
+
+  const json = (await gridRes.json()) as SheetsResponse;
+  const sheet = json.sheets[0];
+  const merges = sheet.merges ?? [];
+  const grid: SheetsCell[][] = (sheet.data[0]?.rowData ?? []).map((r) => r.values ?? []);
+  const { leftCol, rightCol } = dayColumns(dayIndex);
+
+  const countryMerges = merges.filter((m) => m.startRowIndex === 0);
+  const merge = countryMerges.find((m) => leftCol >= m.startColumnIndex && leftCol < m.endColumnIndex);
+
+  const singleCell = (col: number, text: string) => ({
+    updateCells: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: col, endColumnIndex: col + 1 },
+      fields: "userEnteredValue",
+      rows: [{ values: [{ userEnteredValue: { stringValue: text } }] }],
+    },
+  });
+  const mergeRange = (startCol: number, endCol: number) => ({
+    mergeCells: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: startCol, endColumnIndex: endCol },
+      mergeType: "MERGE_ALL",
+    },
+  });
+
+  const requests: unknown[] = [];
+
+  if (merge) {
+    const wholeText = cellText(grid[0][merge.startColumnIndex]);
+    const beforeEmpty = merge.startColumnIndex >= leftCol;
+    const afterEmpty = rightCol + 1 >= merge.endColumnIndex;
+
+    requests.push({
+      unmergeCells: {
+        range: {
+          sheetId,
+          startRowIndex: 0,
+          endRowIndex: 1,
+          startColumnIndex: merge.startColumnIndex,
+          endColumnIndex: merge.endColumnIndex,
+        },
+      },
+    });
+    // unmerge 후엔 원래 병합의 앵커(맨 왼쪽) 셀만 텍스트를 유지하므로, 이 날짜와 뒤쪽
+    // 조각의 새 앵커가 될 셀에는 원래 텍스트를 먼저 채워 넣은 다음 다시 병합한다.
+    if (!afterEmpty) requests.push(singleCell(rightCol + 1, wholeText));
+    if (merge.startColumnIndex !== leftCol) requests.push(singleCell(leftCol, wholeText));
+    if (!beforeEmpty) requests.push(mergeRange(merge.startColumnIndex, leftCol));
+    if (!afterEmpty) requests.push(mergeRange(rightCol + 1, merge.endColumnIndex));
+  }
+
+  requests.push({
+    updateCells: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: rightCol, endColumnIndex: rightCol + 1 },
+      fields: "userEnteredValue",
+      rows: [{ values: [{ userEnteredValue: newRaw ? { stringValue: newRaw } : null }] }],
+    },
+  });
 
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`;
   let res = await fetch(url, {

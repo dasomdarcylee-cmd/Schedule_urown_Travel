@@ -20,6 +20,7 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
   const [now, setNow] = useState(() => new Date());
   const [editingTask, setEditingTask] = useState<ItineraryTask | null>(null);
   const [editingCountry, setEditingCountry] = useState<string | null>(null);
+  const [addingCountryDay, setAddingCountryDay] = useState<number | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [viewingNote, setViewingNote] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -144,23 +145,93 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
     setItinerary((prev) => ({
       ...prev,
       days: prev.days.map((d) => {
-        if (d.rawCountryText === oldRaw) {
-          // 이 날짜의 헤더 칸 자체가 편집된 경우 (단일 국가든 "A -> B" 조합이든)
+        const idx = d.countryRawTexts.indexOf(oldRaw);
+
+        if (idx === -1) {
+          // 이 날짜 헤더엔 없지만, "다음 날짜 국가"로 끼워 보이던 이름이면 갱신
+          return d.nextCountry === oldRaw
+            ? { ...d, nextCountry: newRaw, countries: d.countries.map((c) => (c === oldRaw ? newRaw : c)) }
+            : d;
+        }
+
+        if (d.movingCountryColumn) {
+          // 왼쪽(체류)/오른쪽(이동) 칸이 서로 독립적 — 편집된 칸만 갱신
+          const countries = d.countries.slice();
+          const countryRawTexts = d.countryRawTexts.slice();
+          countries[idx] = newRaw;
+          countryRawTexts[idx] = newRaw;
+          return { ...d, countries, countryRawTexts };
+        }
+
+        if (d.explicit) {
+          // "A -> B" 한 칸짜리 조합 — 전체를 다시 나눠 쓴다
           const parts = splitTransitionCountries(newRaw);
-          const explicit = parts.length > 1;
-          const countries = explicit
-            ? parts
-            : !d.soloDay && d.nextCountry
-              ? [parts[0], d.nextCountry]
-              : [parts[0]];
-          return { ...d, rawCountryText: newRaw, explicit, countries };
+          return { ...d, countries: parts, countryRawTexts: parts.map(() => newRaw) };
         }
-        if (d.nextCountry === oldRaw) {
-          // 다른 날짜 헤더가 바뀌어서, 이 날짜엔 "다음 날짜 국가"로 끼워 보이던 이름만 갱신
-          return { ...d, nextCountry: newRaw, countries: d.countries.map((c) => (c === oldRaw ? newRaw : c)) };
+
+        if (idx === 0) {
+          const countries = !d.soloDay && d.nextCountry ? [newRaw, d.nextCountry] : [newRaw];
+          return { ...d, countries, countryRawTexts: countries };
         }
-        return d;
+        // idx === 1: 다음 날짜 국가를 끌어와 보여주던 이름
+        return {
+          ...d,
+          nextCountry: newRaw,
+          countries: [d.countries[0], newRaw],
+          countryRawTexts: [d.countries[0], newRaw],
+        };
       }),
+    }));
+  }
+
+  async function handleAddMovingCountry(newRaw: string) {
+    if (addingCountryDay == null) return;
+    const dayIndex = addingCountryDay;
+    const res = await fetch(`/api/itinerary/days/${dayIndex}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ movingCountry: newRaw }),
+    });
+    if (!res.ok) throw new Error("저장 실패");
+
+    setItinerary((prev) => ({
+      ...prev,
+      days: prev.days.map((d) =>
+        d.dayIndex === dayIndex
+          ? {
+              ...d,
+              explicit: true,
+              movingCountryColumn: true,
+              countries: [d.countries[0], newRaw],
+              countryRawTexts: [d.countryRawTexts[0], newRaw],
+            }
+          : d
+      ),
+    }));
+  }
+
+  async function handleRemoveMovingCountry(dayIndex: number) {
+    const res = await fetch(`/api/itinerary/days/${dayIndex}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ movingCountry: null }),
+    });
+    if (!res.ok) throw new Error("저장 실패");
+
+    setItinerary((prev) => ({
+      ...prev,
+      days: prev.days.map((d) =>
+        d.dayIndex === dayIndex
+          ? {
+              ...d,
+              explicit: false,
+              movingCountryColumn: false,
+              countries: [d.countries[0]],
+              countryRawTexts: [d.countryRawTexts[0]],
+              nextCountry: null, // 서버가 다시 계산할 때까지 임시로 비워둠 (다음 폴링에서 보정)
+            }
+          : d
+      ),
     }));
   }
 
@@ -251,11 +322,11 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
             {activeDay.countries.map((c, i) => {
               const icon = countryIcon(c);
               return (
-                <span key={c} className="flex items-center gap-1">
+                <span key={`${c}-${i}`} className="flex items-center gap-1">
                   {i > 0 && <span className="text-[#c7b8ab]">→</span>}
                   <button
                     type="button"
-                    onClick={() => setEditingCountry(activeDay.explicit ? activeDay.rawCountryText : c)}
+                    onClick={() => setEditingCountry(activeDay.countryRawTexts[i])}
                     className="flex items-center gap-1 active:opacity-60"
                   >
                     {icon.kind === "swatch" ? (
@@ -275,6 +346,24 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
                 className="ml-1 rounded-full bg-[#fff3e6] px-2 py-0.5 text-[10px] font-bold text-[#c7935c] active:opacity-60"
               >
                 {activeDay.soloDay ? "+ 다음 국가 표시" : "이 날은 국가 하나만"}
+              </button>
+            )}
+            {activeDay.countries.length === 1 && !activeDay.nextCountry && (
+              <button
+                type="button"
+                onClick={() => setAddingCountryDay(activeDay.dayIndex)}
+                className="ml-1 rounded-full bg-[#fff3e6] px-2 py-0.5 text-[10px] font-bold text-[#c7935c] active:opacity-60"
+              >
+                + 이동 국가 추가
+              </button>
+            )}
+            {activeDay.movingCountryColumn && (
+              <button
+                type="button"
+                onClick={() => handleRemoveMovingCountry(activeDay.dayIndex)}
+                className="ml-1 rounded-full bg-[#fff3e6] px-2 py-0.5 text-[10px] font-bold text-[#c7935c] active:opacity-60"
+              >
+                이동 국가 제거
               </button>
             )}
           </div>
@@ -325,6 +414,14 @@ export function ItineraryDeck({ itinerary: initialItinerary }: { itinerary: Itin
           rawLabel={editingCountry}
           onClose={() => setEditingCountry(null)}
           onSave={handleSaveCountry}
+        />
+      )}
+
+      {addingCountryDay != null && (
+        <CountryEditModal
+          rawLabel=""
+          onClose={() => setAddingCountryDay(null)}
+          onSave={handleAddMovingCountry}
         />
       )}
 

@@ -32,10 +32,11 @@ export interface DayColumn {
   date: string; // e.g. "8-26"
   weekday: string; // e.g. "Wed"
   countries: string[]; // 이동일엔 2개국 모두 표시 (soloDay가 true면 항상 1개)
+  countryRawTexts: string[]; // countries와 나란히, 각 항목을 수정할 때 정확히 매칭할 원본 텍스트
   soloDay: boolean; // true면 다음 날짜 국가가 달라도 이 날은 국가 1개만 표시
   nextCountry: string | null; // 다음 날짜 국가(현재와 다를 때만) — 이동 표시 토글에 사용
-  explicit: boolean; // true면 이 날짜 헤더 칸 자체에 "->"가 있어 그 텍스트 그대로 표시 (토글 무관)
-  rawCountryText: string; // 이 날짜 국가 헤더 칸의 원본 텍스트 — 수정 시 정확한 매칭에 사용
+  explicit: boolean; // true면 자동 감지/soloDay 토글 대신, 명시적으로 지정한 표시를 그대로 씀
+  movingCountryColumn: boolean; // true면 오른쪽(이동국가) 칸 방식 — 앱에서 추가/제거 가능
 }
 
 export interface Itinerary {
