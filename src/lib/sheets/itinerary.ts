@@ -196,7 +196,15 @@ export function parseSheetsResponse(json: SheetsResponse, categoryColors: Record
     }
   }
 
-  const revision = hashString(JSON.stringify(grid.map((row) => row.map((c) => c.formattedValue ?? ""))));
+  // 텍스트뿐 아니라 배경색(카테고리 분류에 쓰임)도 revision에 포함해야, 색만 바뀌고
+  // 글자는 그대로인 편집도 "변경 있음"으로 감지해서 폴링 시 화면에 반영된다.
+  const revision = hashString(
+    JSON.stringify(
+      grid.map((row) =>
+        row.map((c) => [c.formattedValue ?? "", c.effectiveFormat?.backgroundColor ?? c.userEnteredFormat?.backgroundColor ?? null])
+      )
+    )
+  );
 
   return {
     sheetTitle: sheet.properties.title,
